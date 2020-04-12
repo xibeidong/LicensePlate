@@ -7,13 +7,18 @@ using System.Threading.Tasks;
 namespace LicensePlate
 {
 
-   
+   public class CheState{
+        bool isIn;
+    }
     public class Manager
     {
         public delegate void InsertIndexListViewDelegate(string str);
         public InsertIndexListViewDelegate InsertIndexListView;
         public delegate void UpdeteIndexListViewDelegate(string str);
         public UpdeteIndexListViewDelegate UpdeteIndexListView;
+        public delegate void ShowMessageDelegate(string message,bool showOrhide);
+        public ShowMessageDelegate ShowHideMessage;
+        public Func<string, string> GetIDbyInChepai;
 
         public static Manager instance = new Manager();
 
@@ -73,10 +78,21 @@ namespace LicensePlate
 
         public string CreateInRecord()
         {
+            if (Manager.instance.m_inWeight < 1000) //称重低于1吨不处理
+            {
+                ShowHideMessage("低于1吨，称重异常，请重试！", true);//出厂围栏遮挡的提示隐藏掉
+                m_inChepaiChange = false;// 
+                ledControl.InLEDTextUpdate("请下磅重试", m_inWeight.ToString());
+                return null;
+            }
+
             string str1 = m_cheInList.Find(x => x == m_inChepai);
             if (!string.IsNullOrEmpty(str1))
             {
                 Console.WriteLine("已经存在入厂记录:"+m_inChepai);
+                ShowHideMessage("禁入！已存在入厂记录:" + m_inChepai, true);
+                ledControl.InLEDTextUpdate("请下磅重试", m_inWeight.ToString());
+                return null;
                 //return "已经存在入厂记录";
             }
             //写入数据库
@@ -85,23 +101,48 @@ namespace LicensePlate
             string sqlStr = string.Format("insert into chepai (in_time,in_weight,in_chepai,in_img) values ('{3}','{0}','{1}','{2}')", m_inWeight, m_inChepai, temp_inImgPath, t);
             int newId = MysqlHelp.Instance.DoInsert(sqlStr);
             m_oldInChepai = m_inChepai;
+
+            if (m_oldInChepai == m_oldOutChepai)//一辆车出厂后又入厂，设置它可以再出厂
+            {
+                m_oldOutChepai = "123456";
+
+            }
+
             m_inChepaiChange = false;
             //显示在listview
-           
+            m_cheInList.Add(m_inChepai);//加入入厂名单
             InsertIndexListView(string.Format("{4},{0},,{1},,,{2},{3},", t, m_inWeight, m_inChepai, m_inImgPath,newId));
             System.Threading.Thread.Sleep(3000);//显示3秒车牌
             ledControl.InLEDTextUpdate("请下磅！", m_inWeight.ToString());
             redSwitch.RiseIn();
+           // ShowHideMessage(0, false);//入厂围栏遮挡的提示隐藏掉a654321
             return null;
         }
        public void CreateOutRecord()
         {
+
+            if (Manager.instance.m_outWeight < 1000) //称重低于1吨不处理
+            {
+                ShowHideMessage("低于1吨，称重异常，请重试！", true);
+                m_outChepaiChange = false;//提示一次就够了
+                ledControl.OutLEDTextUpdate("请下磅重试", m_outWeight.ToString());
+                return;
+            }
             string temp_outImgPath = m_outImgPath.Replace("\\", "\\\\");
             //更新数据库
             string t = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            string sqlStr = string.Format("update  chepai set out_time='{4}',out_weight='{0}',out_img='{1}',out_chepai='{2}',state=1 where state=0 and in_chepai='{3}' and in_time<'{4}'", m_outWeight, temp_outImgPath, m_OutChepai, m_inChepai, t);
-            int ret = MysqlHelp.Instance.Do(sqlStr);
-            Log.myLog.Info(sqlStr + "执行结果=" + ret);
+
+            string IDStr = GetIDbyInChepai(m_OutChepai);
+            // string sqlStr = string.Format("update  chepai set out_time='{4}',out_weight='{0}',out_img='{1}',out_chepai='{2}',state=1 where state=0 and in_chepai='{3}' and in_time<'{4}'", m_outWeight, temp_outImgPath, m_OutChepai, m_OutChepai, t);
+            string sqlStr = $"update chepai set out_time='{t}',out_weight='{m_outWeight}',out_img='{temp_outImgPath}',state=1 where ID={IDStr}";
+
+            int ret = -1;
+            if (IDStr != null)
+            {
+                ret = MysqlHelp.Instance.Do(sqlStr);
+                Log.myLog.Info(sqlStr + "执行结果=" + ret);
+            }
+           
             //更新数据库成功
             if (ret > 0)
             {
@@ -122,16 +163,18 @@ namespace LicensePlate
                 Log.myLog.Info("insertToListView1");
             }
             m_oldOutChepai = m_OutChepai;//更新完记录，记录下来经过的上一个车牌
-            if (m_oldInChepai== m_oldOutChepai)
+            if (m_oldInChepai== m_oldOutChepai)//一辆车入厂后直接出厂，设置它可以再入厂
             {
-                m_oldInChepai = "";
+                m_oldInChepai = "123456";
                 
             }
+            m_outChepaiChange = false;
 
             System.Threading.Thread.Sleep(3000);//显示3秒车牌
-            m_outChepaiChange = false;
             ledControl.OutLEDTextUpdate("请下磅！", m_outWeight.ToString());
             redSwitch.RiseOut();
+            m_cheInList.Remove(m_OutChepai);//从入厂车辆名单里面取出
+           // ShowHideMessage(1, false);//出厂围栏遮挡的提示隐藏掉
         }
     }
 }

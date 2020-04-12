@@ -98,7 +98,7 @@ namespace LicensePlate
                     Console.WriteLine("m_oldInChepai = "+ Manager.instance.m_oldInChepai);
                     Console.WriteLine("strLicense = " + strLicense);
 
-
+                    MessageBox.Show("车牌和上一车辆相同，禁止入厂，请车辆退出地磅！！");
                     return 0;
                 }
                 else
@@ -186,6 +186,7 @@ namespace LicensePlate
                 if (Manager.instance.m_oldOutChepai == strLicense || strLicense.Contains(Manager.instance.m_oldOutChepai))
                 {
                     Manager.instance.m_outChepaiChange = false;
+                    MessageBox.Show("车牌和上一车辆相同，禁止出厂，请车辆退出地磅！！");
                     return 0;
                 }
                 else

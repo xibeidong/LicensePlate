@@ -29,6 +29,11 @@ namespace LicensePlate
         SerialPort m_serialPort_in = new SerialPort();
         SerialPort m_serialPort_out = new SerialPort();
 
+        bool inState_ST = false;
+        bool outState_ST = false;
+
+        bool isOpenIn = false;
+        bool isOpenOut = false;
         public void Init()
         {
 
@@ -36,6 +41,10 @@ namespace LicensePlate
 
         public void OpenDevice1()
         {
+            if (isOpenIn)
+            {
+                return;
+            }
             string str_com = IniFiles.iniFile.IniReadValue("weight", "port1");
             string[] names = SerialPort.GetPortNames();
             bool hasPort = false;
@@ -67,10 +76,46 @@ namespace LicensePlate
             m_serialPort_in.Open();
             m_serialPort_in.DataReceived += new SerialDataReceivedEventHandler(Serial_DataReceived1);
 
+            isOpenIn = true;
             Thread.Sleep(500);
             Log.myLog.Info("串口打开成功:" + str_com);
             UpdateInweightConnect("通讯：OK");
             //label_in_connect.Text = "通讯：OK";
+
+            Thread.Sleep(500);
+            //开起定时器，检测是否生成记录
+            System.Timers.Timer tt = new System.Timers.Timer(2000);
+            tt.Elapsed += new System.Timers.ElapsedEventHandler(timerTheout1);//到达时间的时候执行事件；
+
+            tt.AutoReset = true;//设置是执行一次（false）还是一直执行(true)；
+
+            tt.Enabled = true;//是否执行System.Timers.Timer.Elapsed事件；
+
+        }
+
+        private void timerTheout1(object source, System.Timers.ElapsedEventArgs e)
+        {
+
+            if (inState_ST)
+            {
+                if (Manager.instance.m_inChepaiChange)//识别了新车牌
+                {
+                   
+                    if (Manager.instance.m_inRedSwitchOK || Manager.instance.ignore_in_redSwitch)
+                    {
+                        Manager.instance.CreateInRecord();
+                    }
+                    else
+                    {
+                        Manager.instance.ShowHideMessage("入厂围栏有遮挡！", true);
+                       // MessageBox.Show("入厂围栏有遮挡！");
+                    }
+
+
+                }
+            }
+
+          
 
         }
 
@@ -92,6 +137,7 @@ namespace LicensePlate
                 string[] strs = str.Split(',');
                 if (strs[0] == "US")
                 {
+                    inState_ST = false;
                     UpdateInweightState("称重：不稳定");
                     //label_in_state.Text = "称重：不稳定";
                 }
@@ -102,6 +148,7 @@ namespace LicensePlate
                 }
                 else if (strs[0] == "OL")
                 {
+                    inState_ST = false;
                     UpdateInweightState("称重： 超载");
                     //label_in_state.Text = "称重：  超载";
                 }
@@ -144,20 +191,22 @@ namespace LicensePlate
                    
                     if (strs[0] == "ST")
                     {
-                        if (Manager.instance.m_inChepaiChange)//识别了新车牌
-                        {
-                            System.Threading.Thread.Sleep(2000);//停顿2秒，等待围栏状态更新
-                            if (Manager.instance.m_inRedSwitchOK || Manager.instance.ignore_in_redSwitch)
-                            {
-                                Manager.instance.CreateInRecord();
-                            }
-                            else
-                            {
-                                MessageBox.Show("入厂围栏有遮挡！");
-                            }
+                        inState_ST = true;
+                       // inWeight_ST = 
+                        //if (Manager.instance.m_inChepaiChange)//识别了新车牌
+                        //{
+                        //  //  System.Threading.Thread.Sleep(2000);//停顿2秒，等待围栏状态更新
+                        //    if (Manager.instance.m_inRedSwitchOK || Manager.instance.ignore_in_redSwitch)
+                        //    {
+                        //        Manager.instance.CreateInRecord();
+                        //    }
+                        //    else
+                        //    {
+                        //        MessageBox.Show("入厂围栏有遮挡！");
+                        //    }
 
 
-                        }
+                        //}
 
                     }
 
@@ -168,6 +217,10 @@ namespace LicensePlate
 
         public void OpenDevice2()
         {
+            if (isOpenOut)
+            {
+                return;
+            }
             string str_com = IniFiles.iniFile.IniReadValue("weight", "port2");
             string[] names = SerialPort.GetPortNames();
             bool hasPort = false;
@@ -199,10 +252,20 @@ namespace LicensePlate
             m_serialPort_out.Open();
             m_serialPort_out.DataReceived += new SerialDataReceivedEventHandler(Serial_DataReceived2);
 
+            isOpenOut = true;
             Thread.Sleep(500);
             Log.myLog.Info("串口打开成功:" + str_com);
             //label_out_connect.Text = "通讯：OK";
             UpdateOutweightConnect("通讯：OK");
+
+            Thread.Sleep(500);
+            //开起定时器，检测是否生成记录
+            System.Timers.Timer tt = new System.Timers.Timer(2000);
+            tt.Elapsed += new System.Timers.ElapsedEventHandler(timerTheout2);//到达时间的时候执行事件；
+
+            tt.AutoReset = true;//设置是执行一次（false）还是一直执行(true)；
+
+            tt.Enabled = true;//是否执行System.Timers.Timer.Elapsed事件；
         }
 
         private void Serial_DataReceived2(object sender, SerialDataReceivedEventArgs e)
@@ -221,6 +284,7 @@ namespace LicensePlate
 
                 if (strs[0] == "US")
                 {
+                    outState_ST = false;
                     //label_out_state.Text = "称重：不稳定";
                     UpdateOutweightState("称重：不稳定");
                 }
@@ -230,7 +294,7 @@ namespace LicensePlate
                 }
                 else if (strs[0] == "OL")
                 {
-                  
+                    outState_ST = false;
                     UpdateOutweightState("称重：  超载");
                 }
 
@@ -264,6 +328,7 @@ namespace LicensePlate
                     try
                     {
                         Manager.instance.m_outWeight = double.Parse(temp_weight);
+                       
                     }
                     catch (Exception e1)
                     {
@@ -272,24 +337,53 @@ namespace LicensePlate
                     }
                     if (strs[0] == "ST")
                     {
-                        if (Manager.instance.m_outChepaiChange)//识别了新车牌
-                        {
-                            System.Threading.Thread.Sleep(2000);//停顿2秒，等待围栏状态更新
+                        outState_ST = true;
+                        //if (Manager.instance.m_outChepaiChange)//识别了新车牌
+                        //{
+                        //   // System.Threading.Thread.Sleep(2000);//停顿2秒，等待围栏状态更新
 
-                            if (Manager.instance.m_outRedSwitchOK || Manager.instance.ignore_out_redSwitch)
-                            {
-                                Manager.instance.CreateOutRecord();
-                            }
-                            else
-                            {
-                                MessageBox.Show("出厂围栏有遮挡！");
-                            }
+                        //    if (Manager.instance.m_outRedSwitchOK || Manager.instance.ignore_out_redSwitch)
+                        //    {
+                        //        Manager.instance.CreateOutRecord();
+                        //    }
+                        //    else
+                        //    {
+                        //        MessageBox.Show("出厂围栏有遮挡！");
+                        //    }
 
-                        }
+                        //}
 
                     }
 
                 }
+            }
+
+        }
+
+        private void timerTheout2(object source, System.Timers.ElapsedEventArgs e)
+        {
+
+           
+
+            if (outState_ST)
+            {
+                if (Manager.instance.m_outChepaiChange)//识别了新车牌
+                {
+                   
+
+                    if (Manager.instance.m_outRedSwitchOK || Manager.instance.ignore_out_redSwitch)
+                    {
+                        Manager.instance.CreateOutRecord();
+                    }
+                    else
+                    {
+                        
+                        Manager.instance.ShowHideMessage("出厂围栏有遮挡！", true);
+                        // MessageBox.Show("出厂围栏有遮挡！");
+                    }
+
+                }
+
             }
 
         }

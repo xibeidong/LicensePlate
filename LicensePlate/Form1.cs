@@ -25,14 +25,36 @@ namespace LicensePlate
         float xvalues;
         float yvalues;
 
+        MessageShowForm f1 = new MessageShowForm("入厂围栏有遮挡");
+       // MessageShowForm f2 = new MessageShowForm("出厂围栏有遮挡");
+
+        void ShowHideMessageForm(string message , bool isShow)
+        {
+            if (isShow)
+            {
+                f1.Show();
+                f1.SetText(message);
+            }
+            else
+            {
+                f1.Hide();
+            }
+            
+        }
         public Form1()
         {
+
+           if( (0x01 & 0x01) == 0x01)
+            {
+                Console.WriteLine(1);
+            }
            // test();
           
             //0x58  1011000  // 01 02 00 00 00 10 79 c6
             InitializeComponent();
             //0x01,0x02,0x00,0x00,0x01,0x00
-           // byte[] data = AddCRC(new byte[] { 0x01, 0x02, 0x00, 0x00, 0x00, 0x10 });//121 154 0x79,0x9A
+           // byte[] data = new byte[] { 0x01, 0x02, 0xf0, 0x9f, 0x70, 0x10 };//121 154 0x79,0x9A
+           //Console.WriteLine( BitConverter.ToString(data));
         }
 
         #region Test
@@ -84,6 +106,10 @@ namespace LicensePlate
 
         void test()
         {
+            string ttt = "-120";
+            int bb = int.Parse(ttt);
+
+
             string numStr = "+33.34";
             double n = double.Parse(numStr);
             numStr = "-12.345";
@@ -127,6 +153,8 @@ namespace LicensePlate
             Manager.instance.init();
             Manager.instance.InsertIndexListView = new Manager.InsertIndexListViewDelegate(insertToListView1);
             Manager.instance.UpdeteIndexListView = new Manager.UpdeteIndexListViewDelegate(updateListView1);
+            Manager.instance.ShowHideMessage = new Manager.ShowMessageDelegate(ShowHideMessageForm);
+            Manager.instance.GetIDbyInChepai += GetIDbyInchepai;
 
             m_CameraLicense = new CameraLicense();
             m_CameraLicense.Init();
@@ -202,9 +230,10 @@ namespace LicensePlate
             Log.myLog.Info(string.Format("'{0}'", label_in_chepai.Text));
         }
 
-  
+       
         private void 检查数据库ToolStripMenuItem_Click(object sender, EventArgs e)
         {
+          
             MysqlHelp.Instance.check();
         }
         #region 车牌识别
@@ -379,7 +408,7 @@ namespace LicensePlate
                         Manager.instance.m_cheOutList.Add(chepai);
                     }else if (out_time == "")
                     {
-                        Manager.instance.m_cheInList.Add(chepai);
+                       // Manager.instance.m_cheInList.Add(chepai);
                     }
                  
                 }
@@ -388,6 +417,17 @@ namespace LicensePlate
 
         }
 
+        string GetIDbyInchepai(string in_chepai)
+        {
+            for (int i = listView1.Items.Count-1;  i>=0; i--)
+            {
+                if (listView1.Items[i].SubItems[6].Text == in_chepai)
+                {
+                    return listView1.Items[i].SubItems[0].Text;
+                }
+            }
+            return null;
+        } 
         /// <summary>
         /// 
         /// </summary>
@@ -406,8 +446,8 @@ namespace LicensePlate
                     listView1.Items[i].SubItems[8].Text = strs[3];
 
                     //计算重量 3入厂，4出厂 5净重
-                    int w_in = int.Parse(listView1.Items[i].SubItems[3].Text.Remove(0,1));
-                    int w_out = int.Parse(listView1.Items[i].SubItems[4].Text.Remove(0, 1));
+                    int w_in = int.Parse(listView1.Items[i].SubItems[3].Text);
+                    int w_out = int.Parse(listView1.Items[i].SubItems[4].Text);
                     listView1.Items[i].SubItems[5].Text = (w_in-w_out).ToString();
                     return ;
 
@@ -440,8 +480,8 @@ namespace LicensePlate
             {
                 try
                 {
-                    int w1 = int.Parse(strs[3].Remove(0, 1));
-                    int w2 = int.Parse(strs[4].Remove(0, 1));
+                    int w1 = int.Parse(strs[3]);
+                    int w2 = int.Parse(strs[4]);
                     li.SubItems[5].Text = "" + (w1 - w2);
                 }
                 catch (Exception e)
@@ -464,6 +504,11 @@ namespace LicensePlate
             //将行对象绑定在listview对象中
             //listView1.Items.Add(li); //在后面添加数据
             listView1.Items.Insert(0, li); //永远添加在第一行
+
+            if (listView1.Items.Count>500)
+            {
+                listView1.Items.RemoveAt(500);
+            }
         }
 
         private void listView1_MouseDoubleClick(object sender, MouseEventArgs e)
@@ -488,9 +533,14 @@ namespace LicensePlate
                             }
                             else
                             {
+                                pictureBox_in_img.Image = Image.FromFile("null.jpg");
                                 MessageBox.Show("不存在入厂图像：" + item.SubItems[7].Text);
                             }
 
+                        }
+                        else
+                        {
+                            pictureBox_in_img.Image = Image.FromFile("null.jpg");
                         }
                         if (item.SubItems[8].Text != "")
                         {
@@ -501,9 +551,14 @@ namespace LicensePlate
                             }
                             else
                             {
+                                pictureBox_out_img.Image = Image.FromFile("null.jpg");
                                 MessageBox.Show("不存在出厂图像：" + item.SubItems[8].Text);
                             }
                                
+                        }
+                        else
+                        {
+                            pictureBox_out_img.Image = Image.FromFile("null.jpg");
                         }
 
                     }
@@ -607,7 +662,7 @@ namespace LicensePlate
             //string sql_in_img = in_img.Replace("\\", "\\\\");
             //string sql_out_img = out_img.Replace("\\", "\\\\");
             sqlStr = string.Format("insert into chepai (in_time,out_time,in_weight,out_weight,in_chepai,out_chepai,in_img,out_img) values ('{0}','{1}','{2}','{3}','{4}','{5}','{6}','{7}') ",
-                in_time, out_time, in_weight, out_weight, chepai, chepai, in_img, out_img);
+                in_time, out_time, in_weight, out_weight, chepai, chepai, in_img.Replace("\\", "\\\\"), out_img.Replace("\\", "\\\\"));
             int newId = MysqlHelp.Instance.DoInsert(sqlStr);
 
             //id，入厂时间，出厂时间，入厂重量，出厂重量，货物重量，车牌号，入厂截图，出厂截图
@@ -784,12 +839,14 @@ namespace LicensePlate
         {
             FormShowImg temp = new FormShowImg();
             temp.SetImg(Manager.Instance.m_inImgPath);
+          
         }
 
         private void pictureBox_out_img_DoubleClick(object sender, EventArgs e)
         {
             FormShowImg temp = new FormShowImg();
             temp.SetImg(Manager.Instance.m_outImgPath);
+           
         }
 
         private void 校时ToolStripMenuItem_Click(object sender, EventArgs e)
@@ -810,7 +867,8 @@ namespace LicensePlate
             int count = listView1.CheckedItems.Count;
             if (count!=1)
             {
-                MessageBox.Show("只能删除选中的单条记录！","提示");
+                MessageBox.Show("失败！只能删除选中的单条记录！","提示");
+                return;
             }
             DialogResult re =  MessageBox.Show("确定删除本条记录吗？删除后将无法回复。", "警告", MessageBoxButtons.OKCancel);
             if (re!=DialogResult.OK)
@@ -830,6 +888,46 @@ namespace LicensePlate
             }
 
 
+        }
+
+        private void 弹窗测试ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Manager.instance.ShowHideMessage("这是一条提示！", true);
+        }
+
+        private void 一键启动入厂设备ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            ShowHideMessageForm("正在打开入厂车牌识别设备(1/4)", true);
+            m_CameraLicense.OpenDevice1(pictureBox_in_video.Handle);
+            Thread.Sleep(1500);
+            ShowHideMessageForm("正在打开入厂地磅(2/4)", true);
+            m_Loadometer.OpenDevice1();
+            Thread.Sleep(1500);
+            ShowHideMessageForm("正在打开红外围栏检测(3/4)", true);
+            m_RedSwitch.OpenDevice();
+            Thread.Sleep(1500);
+            ShowHideMessageForm("正在连接入厂LED(4/4)", true);
+            m_LEDControl.OpenDevice1();
+            Thread.Sleep(1500);
+            ShowHideMessageForm("入厂设备启动完成", true);
+
+        }
+
+        private void 一键启动出厂设备ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            ShowHideMessageForm("正在打开出厂车牌识别设备(1/4)", true);
+            m_CameraLicense.OpenDevice2(pictureBox_out_video.Handle);
+            Thread.Sleep(1500);
+            ShowHideMessageForm("正在打开出厂地磅(2/4)", true);
+            m_Loadometer.OpenDevice2();
+            Thread.Sleep(1500);
+            ShowHideMessageForm("正在打开红外围栏检测(3/4)", true);
+            m_RedSwitch.OpenDevice();
+            Thread.Sleep(1500);
+            ShowHideMessageForm("正在连接出厂LED(4/4)", true);
+            m_LEDControl.OpenDevice2();
+            Thread.Sleep(1500);
+            ShowHideMessageForm("出厂设备启动完成", true);
         }
     }
 }

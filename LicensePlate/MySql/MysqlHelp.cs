@@ -162,7 +162,7 @@ namespace LicensePlate
                 try
                 {
                     ret = cmd2.ExecuteNonQuery();
-                    Log.myLog.Info(commdStr + " 执行结果：" + ret.ToString());
+                   // Log.myLog.Info(commdStr + " 执行结果：" + ret.ToString());
 
                     long newid = cmd2.LastInsertedId;
                     return (int)newid;
@@ -184,7 +184,7 @@ namespace LicensePlate
                 try
                 {
                     ret = cmd2.ExecuteNonQuery();
-                    Log.myLog.Info(commdStr + " 执行结果：" + ret.ToString());
+                    //Log.myLog.Info(commdStr + " 执行结果：" + ret.ToString());
                 }
                 catch (Exception e)
                 {
@@ -204,7 +204,7 @@ namespace LicensePlate
                 try
                 {
                     ret = cmd2.ExecuteReader();
-                    Log.myLog.Info(commdStr + " 执行结果：" + ret.ToString());
+                  //  Log.myLog.Info(commdStr + " 执行结果：" + ret.ToString());
                 }
                 catch (Exception e)
                 {

@@ -175,17 +175,33 @@ namespace LicensePlate
         }
         public void TestLEDTextUpdate(string chepai,string weight)
         {
-            double w;
-            if (double.TryParse(weight,out w))
+
+            if (chepai==null&&weight==null)
             {
-                w = w / 1000;
+                Console.WriteLine("LED1 clear");
             }
             else
             {
-                w = 0;
+                double w;
+                if (double.TryParse(weight, out w))
+                {
+                    w = w / 1000;
+                }
+                else
+                {
+                    w = 0;
+                }
+                if (w == 0)
+                {
+                    weight = "称重中...";
+                }
+                else
+                {
+                    weight = "称重:" + w + "吨";
+                }
             }
-            
-            weight = "称重:" + w + "吨";
+           
+           
            
             int nResult;
             LedDll.COMMUNICATIONINFO CommunicationInfo = new LedDll.COMMUNICATIONINFO();//定义一通讯参数结构体变量用于对设定的LED通讯，具体对此结构体元素赋值说明见COMMUNICATIONINFO结构体定义部份注示
@@ -355,17 +371,33 @@ namespace LicensePlate
         }
         public void TestLEDTextUpdate2(string chepai, string weight)
         {
-            double w;
-            if (double.TryParse(weight, out w))
+
+            if (chepai == null && weight == null)
             {
-                w = w / 1000;
+                Console.WriteLine("LED2 clear");
             }
             else
             {
-                w = 0;
+                double w;
+                if (double.TryParse(weight, out w))
+                {
+                    w = w / 1000;
+                }
+                else
+                {
+                    w = 0;
+                }
+
+                if (w == 0)
+                {
+                    weight = "称重中...";
+                }
+                else
+                {
+                    weight = "称重:" + w + "吨";
+                }
             }
 
-            weight = "称重:" + w + "吨";
 
             int nResult;
             LedDll.COMMUNICATIONINFO CommunicationInfo = new LedDll.COMMUNICATIONINFO();//定义一通讯参数结构体变量用于对设定的LED通讯，具体对此结构体元素赋值说明见COMMUNICATIONINFO结构体定义部份注示
@@ -544,7 +576,7 @@ namespace LicensePlate
         {
 
             TestLEDTextUpdate(chepai, weight);
-            return;
+           
 
            
             //定时清屏
@@ -563,20 +595,20 @@ namespace LicensePlate
         public void OutLEDTextUpdate(string chepai, string weight)
         {
             TestLEDTextUpdate2(chepai, weight);
-            return;
            
 
-            //出现"称重完毕请下磅"之后，定时清屏
-            //if (chepai.Contains("请下"))
-            //{
-            //    System.Timers.Timer t = new System.Timers.Timer(15000);//实例化Timer类，设置间隔时间为10000毫秒；
 
-            //    t.Elapsed += new System.Timers.ElapsedEventHandler(theoutClearLED2);//到达时间的时候执行事件；
+            //出现"请下磅"之后，定时清屏
+            if (chepai.Contains("请下"))
+            {
+                System.Timers.Timer t = new System.Timers.Timer(15000);//实例化Timer类，设置间隔时间为10000毫秒；
 
-            //    t.AutoReset = false;//设置是执行一次（false）还是一直执行(true)；
+                t.Elapsed += new System.Timers.ElapsedEventHandler(theoutClearLED2);//到达时间的时候执行事件；
 
-            //    t.Enabled = true;//是否执行System.Timers.Timer.Elapsed事件；
-            //}
+                t.AutoReset = false;//设置是执行一次（false）还是一直执行(true)；
+
+                t.Enabled = true;//是否执行System.Timers.Timer.Elapsed事件；
+            }
 
         }
 
@@ -584,14 +616,14 @@ namespace LicensePlate
         public void theoutClearLED1(object source, System.Timers.ElapsedEventArgs e)
         {
 
-            InLEDTextUpdate(" ", " ");
+            InLEDTextUpdate(null, null);
 
         }
 
         public void theoutClearLED2(object source, System.Timers.ElapsedEventArgs e)
         {
 
-            OutLEDTextUpdate(" ", " ");
+            OutLEDTextUpdate(null, null);
 
         }
     }

@@ -106,8 +106,8 @@ namespace LicensePlate
             {
                 try
                 {
-                    int w1 = int.Parse(strs[3].Remove(0, 1));
-                    int w2 = int.Parse(strs[4].Remove(0, 1));
+                    int w1 = int.Parse(strs[3]);
+                    int w2 = int.Parse(strs[4]);
                     li.SubItems[5].Text = "" + (w1 - w2);
                 }
                 catch (Exception e)
@@ -193,15 +193,15 @@ namespace LicensePlate
             string cpai = textBox_chepai.Text.Trim();
             bool useCepai = checkBox_chepai.Checked;
 
-            string commdStr="select * from chepai limit 100";
+            string commdStr="select * from chepai limit 100 where state=1";
 
             if (useCepai)
             {
-                commdStr = string.Format("select * from chepai where in_chepai='{0}' and in_time>'{1}' and in_time<'{2}' order by in_time desc limit 100", cpai, t1, t2);
+                commdStr = string.Format("select * from chepai where state=1 and in_chepai='{0}' and in_time>'{1}' and in_time<'{2}' order by in_time desc limit 100", cpai, t1, t2);
             }
             else
             {
-                commdStr = string.Format("select * from chepai where  in_time>'{1}' and in_time<'{2}' order by in_time desc limit 100", cpai, t1, t2);
+                commdStr = string.Format("select * from chepai where state=1 and in_time>'{1}' and in_time<'{2}' order by in_time desc limit 100", cpai, t1, t2);
 
             }
 
@@ -234,20 +234,20 @@ namespace LicensePlate
         {
            
             FormShowImg temp = new FormShowImg();
-            if (path1 != null)
-            {
-                temp.SetImg(path1);
-            }
+            
+            temp.SetImg(path1);
+            
+            
         }
 
         private void pictureBox2_DoubleClick(object sender, EventArgs e)
         {
             FormShowImg temp = new FormShowImg();
-            if (path2 != null)
-            {
-                temp.SetImg(path2);
-            }
-          
+           
+            
+           temp.SetImg(path2);
+            
+           
         }
 
         private void listView1_DoubleClick(object sender, EventArgs e)
@@ -272,10 +272,16 @@ namespace LicensePlate
                             }
                             else
                             {
+                                pictureBox1.Image = Image.FromFile("null.jpg");
                                 MessageBox.Show("不存在入厂图像：" + item.SubItems[7].Text);
                             }
-                          
-                           
+
+
+                        }
+                        else
+                        {
+                            pictureBox1.Image = Image.FromFile("null.jpg");
+                           // MessageBox.Show("不存在入厂图像：" + item.SubItems[7].Text);
                         }
                         if (item.SubItems[8].Text != "")
                         {
@@ -286,9 +292,14 @@ namespace LicensePlate
                             }
                             else
                             {
+                                pictureBox2.Image = Image.FromFile("null.jpg");
                                 MessageBox.Show("不存在入厂图像：" + item.SubItems[8].Text);
                             }
-                                
+
+                        }
+                        else
+                        {
+                            pictureBox2.Image = Image.FromFile("null.jpg");
                         }
 
                     }
