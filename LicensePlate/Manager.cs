@@ -6,9 +6,18 @@ using System.Threading.Tasks;
 
 namespace LicensePlate
 {
+    public enum RootLevel
+    {
+        Highest,
+        Normal,
+        Minimum
+    }
+   public class UserInfo{
+        public bool isLogin = false;
+        public string username = "admin";
 
-   public class CheState{
-        bool isIn;
+        public string password;
+        public RootLevel level = RootLevel.Highest;
     }
     public class Manager
     {
@@ -19,11 +28,13 @@ namespace LicensePlate
         public delegate void ShowMessageDelegate(string message,bool showOrhide);
         public ShowMessageDelegate ShowHideMessage;
         public Func<string, string> GetIDbyInChepai;
-
+        public Action<string> LogToRichText;
         public static Manager instance = new Manager();
 
-        public List<string> m_cheOutList = new List<string>();
-        public List<string> m_cheInList = new List<string>();
+        public List<string> m_blackList = new List<string>();//黑名单
+        public List<string> m_cheInList = new List<string>();//入厂名单
+
+       // public
 
         //识别的车牌不重复
         public bool m_inChepaiChange;
@@ -36,6 +47,9 @@ namespace LicensePlate
         //忽略红外围栏的作用
         public bool ignore_in_redSwitch = false;
         public bool ignore_out_redSwitch = false;
+        public bool isPreviewPrint = false;
+
+        public UserInfo userInfo = new UserInfo();
 
         //记录当前生成记录的车牌
         public string m_oldInChepai = "123456";
@@ -51,7 +65,8 @@ namespace LicensePlate
 
         public LEDControl ledControl;
         public RedSwitch redSwitch;
-
+       
+        
        
 
         private Manager()
@@ -74,6 +89,7 @@ namespace LicensePlate
         public void init()
         {
             MysqlHelp.Instance.init();
+
         }
 
         public string CreateInRecord()
@@ -95,6 +111,14 @@ namespace LicensePlate
                 return null;
                 //return "已经存在入厂记录";
             }
+            str1 = m_blackList.Find((data)=>data==m_inChepai);
+            if (!string.IsNullOrEmpty(str1))
+            {
+                ShowHideMessage("黑名单成员禁入！:" + m_inChepai, true);
+                ledControl.InLEDTextUpdate("已拉黑", m_inWeight.ToString());
+                return null;
+            }
+
             //写入数据库
             string t = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             string temp_inImgPath = m_inImgPath.Replace("\\", "\\\\");
@@ -175,6 +199,45 @@ namespace LicensePlate
             redSwitch.RiseOut();
             m_cheInList.Remove(m_OutChepai);//从入厂车辆名单里面取出
            // ShowHideMessage(1, false);//出厂围栏遮挡的提示隐藏掉
+        }
+
+        public bool AddBlackList(string chepai)
+        {
+            
+            if (userInfo.level<RootLevel.Highest)
+            {
+                ShowHideMessage("用户权限不够", true);
+                return false;
+            }
+
+            string sqlStr = $"insert into blacklist (chepai,add_time,do_user) values ('{chepai.Trim()}','{System.DateTime.Now}','{userInfo.username}')";
+            int ret = MysqlHelp.Instance.DoInsert(sqlStr);
+            if (ret<0)
+            {
+               // ShowHideMessage($"{chepai}加入黑名单失败", true);
+                return false;
+            }
+            else
+            {
+                m_blackList.Add(chepai);
+            }
+            return true;
+        }
+
+        public bool RemoveBlackList(string chepai)
+        {
+            string sql = $"delete from blacklist where chepai='{chepai}'";
+            int ret = MysqlHelp.Instance.Do(sql);
+            if (ret == 1)
+            {
+                m_blackList.Remove(chepai);
+                return true;
+            }
+            else
+            {
+                // ShowHideMessage($"{chepai}移除黑名单失败", true);
+                return false;
+            }
         }
     }
 }

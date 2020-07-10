@@ -94,7 +94,35 @@ namespace LicensePlate
           
 
             conn.Close();
-            CreatTable1();
+            // 建表 
+
+           
+          //  CreatTable1();
+
+            //表一：
+            string sql = "CREATE TABLE blacklist (chepai varchar(50) not null, add_time datetime,do_user varchar(50),PRIMARY KEY (chepai))";
+            bool ret2 = CreatTableBySqlStr(sql);
+            if (!ret2)
+            {
+                MessageBox.Show("初始化失败，创建表1失败！");
+            }
+            //表二：
+            sql = "CREATE TABLE account(username varchar(50) not null,password varchar(50) not null,add_time datetime not null,PRIMARY KEY (username)) ";
+            ret2=CreatTableBySqlStr(sql);
+            if (!ret2)
+            {
+                MessageBox.Show("初始化失败，创建表2失败！");
+            }
+            /*
+           *表三：id，入厂时间，出厂时间，入厂重量，出厂重量，货物重量，车牌号，入厂截图，出厂截图
+
+          */
+            sql = "CREATE TABLE chepai (ID int not null auto_increment, in_time datetime,out_time datetime,in_weight double,out_weight double,suttle double,in_chepai varchar(50),out_chepai varchar(50),in_img varchar(200),out_img varchar(200),state tinyint(10) DEFAULT 0, PRIMARY KEY (ID))";
+            ret2 = CreatTableBySqlStr(sql);
+            if (!ret2)
+            {
+                MessageBox.Show("初始化失败，创建表3失败！");
+            }
         }
 
         private void CreatTable1()
@@ -104,11 +132,13 @@ namespace LicensePlate
             MySqlConnection conn = new MySqlConnection(connStr);
             conn.Open();
             // 建表 
-            /*
-            *表一：id，入厂时间，出厂时间，入厂重量，出厂重量，货物重量，车牌号，入厂截图，出厂截图
 
-           */
-            string creatTable1 = string.Format("CREATE TABLE chepai (ID int not null auto_increment, in_time datetime,out_time datetime,in_weight double,out_weight double,suttle double,in_chepai varchar(50),out_chepai varchar(50),in_img varchar(200),out_img varchar(200),state tinyint(10) DEFAULT 0, PRIMARY KEY (ID))");
+            /*
+           *表三：id，入厂时间，出厂时间，入厂重量，出厂重量，货物重量，车牌号，入厂截图，出厂截图
+
+          */
+            string creatTable1 = "CREATE TABLE chepai (ID int not null auto_increment, in_time datetime,out_time datetime,in_weight double,out_weight double,suttle double,in_chepai varchar(50),out_chepai varchar(50),in_img varchar(200),out_img varchar(200),state tinyint(10) DEFAULT 0, PRIMARY KEY (ID))";
+
             using (MySqlCommand cmd2 = new MySqlCommand(creatTable1, conn))
             {
                int ret = cmd2.ExecuteNonQuery();
@@ -117,6 +147,31 @@ namespace LicensePlate
                 }
             }
             conn.Close();
+
+        }
+
+        private bool CreatTableBySqlStr(string sql)
+        {
+            connStr = string.Format("Database={0};datasource={1};port=3306;user={2};pwd={3};", database, datasource, user, password);
+
+            MySqlConnection conn = new MySqlConnection(connStr);
+            conn.Open();
+            using (MySqlCommand cmd2 = new MySqlCommand(sql, conn))
+            {
+                int ret = cmd2.ExecuteNonQuery();
+                if (ret >= 0)
+                {
+                    //MessageBox.Show("建表成功！");
+                }
+                else
+                {
+                    conn.Close();
+                   
+                    return false;
+                }
+            }
+            conn.Close();
+            return true;
 
         }
         public void init()
@@ -136,27 +191,31 @@ namespace LicensePlate
                 MessageBox.Show("数据库连接失败，记录将不被保存！"+e.Message);
                 return;
             }
-          
+         
+
 
             t = new System.Timers.Timer(1000*3600);
             t.Elapsed += new System.Timers.ElapsedEventHandler(theout);//到达时间的时候执行事件；
             t.AutoReset = true;//设置是执行一次（false）还是一直执行(true)；
+            t.Enabled = true;//是否执行System.Timers.Timer.Elapsed事件
             isinit = true;
         }
         //定时执行一下，防止连接停止活跃
-        private void theout(object sender, EventArgs e)
+        private void theout(object source, System.Timers.ElapsedEventArgs e)
         {
-            string str = "SELECT COUNT(1) FROM chepai";
+            Console.WriteLine("mysql 连接检测");
+            string str = "SELECT COUNT(*) FROM chepai";
             using (MySqlCommand cmd2 = new MySqlCommand(str, sqlConn))
             {
-                int ret = cmd2.ExecuteNonQuery();
-                Log.myLog.Info("SELECT COUNT(1) FROM chepai 执行结果："+ret.ToString());
+               // int ret = cmd2.ExecuteNonQuery();
+                var ret =  cmd2.ExecuteScalar();
+                Log.myLog.Info("SELECT COUNT(*) FROM chepai 执行结果："+ret.ToString());
             }
         }
 
         public int DoInsert(string commdStr)
         {
-            int ret = 0;
+            int ret = -1;
             using (MySqlCommand cmd2 = new MySqlCommand(commdStr, sqlConn))
             {
                 try

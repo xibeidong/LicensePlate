@@ -28,6 +28,11 @@ namespace LicensePlate
         {
             Init();
         }
+
+        ~LEDControl()
+        {
+
+        }
         public void Init()
         {
             ip1 = IniFiles.iniFile.IniReadValue("LED1", "ip");
@@ -80,7 +85,7 @@ namespace LicensePlate
             CommunicationInfo.LedNumber = LedNumber1;//LED屏号为1，注意socket通讯和232通讯不识别屏号，默认赋1就行了，485必需根据屏的实际屏号进行赋值
 
 
-
+            
             nResult = LedDll.LV_SetBasicInfoEx(ref CommunicationInfo, ColorType1, GrayLevel1, LedWidth1, LedHeight1);//设置屏参，屏的颜色为2即为双基色，64为屏宽点数，32为屏高点数，具体函数参数说明见函数声明注示
             if (nResult != 0)//如果失败则可以调用LV_GetError获取中文错误信息
             {
@@ -88,6 +93,8 @@ namespace LicensePlate
                 ErrStr = LedDll.LS_GetError(nResult);
                 Log.myLog.Info("入厂LED，设置失败！");
                 MessageBox.Show(ErrStr);
+                Manager.instance.LogToRichText("入厂LED，"+ErrStr);
+                return;
             }
             else
             {
@@ -97,7 +104,7 @@ namespace LicensePlate
 
            
 
-            Console.WriteLine(LedWidth1+"*"+ LedHeight1);
+           // Console.WriteLine(LedWidth1+"*"+ LedHeight1);
 
         }
 
@@ -120,6 +127,8 @@ namespace LicensePlate
                 ErrStr = LedDll.LS_GetError(nResult);
                 Log.myLog.Info("出厂LED，设置失败！");
                 MessageBox.Show(ErrStr);
+                Manager.instance.LogToRichText("出厂LED，" + ErrStr);
+                return;
             }
             else
             {
@@ -129,7 +138,7 @@ namespace LicensePlate
 
 
 
-            Console.WriteLine(LedWidth2 + "*" + LedHeight2);
+            //Console.WriteLine(LedWidth2 + "*" + LedHeight2);
         }
 
        public void AdjustTime()
@@ -580,7 +589,7 @@ namespace LicensePlate
 
            
             //定时清屏
-            if (chepai.Contains("请下"))
+            if (chepai.Contains("请下")||chepai.Contains("已拉黑")||chepai.Contains("禁"))
             {
                 System.Timers.Timer t = new System.Timers.Timer(15000);//实例化Timer类，设置间隔时间为10000毫秒；
 
@@ -595,11 +604,11 @@ namespace LicensePlate
         public void OutLEDTextUpdate(string chepai, string weight)
         {
             TestLEDTextUpdate2(chepai, weight);
-           
+
 
 
             //出现"请下磅"之后，定时清屏
-            if (chepai.Contains("请下"))
+            if (chepai.Contains("请下") || chepai.Contains("已拉黑") || chepai.Contains("禁"))
             {
                 System.Timers.Timer t = new System.Timers.Timer(15000);//实例化Timer类，设置间隔时间为10000毫秒；
 

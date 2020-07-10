@@ -34,15 +34,38 @@ namespace LicensePlate
 
         bool isOpenIn = false;
         bool isOpenOut = false;
+
+        System.Timers.Timer loadometer_t1;
+        System.Timers.Timer loadometer_t2;
+
         public void Init()
         {
 
         }
-
+        ~Loadometer()
+        {
+            if (loadometer_t1!=null)
+            {
+                loadometer_t1.Stop();
+            }
+            if (loadometer_t2 != null)
+            {
+                loadometer_t2.Stop();
+            }
+            if (m_serialPort_in.IsOpen)
+            {
+                m_serialPort_in.Close();
+            }
+            if (m_serialPort_out.IsOpen)
+            {
+                m_serialPort_out.Close();
+            }
+        }
         public void OpenDevice1()
         {
             if (isOpenIn)
             {
+                Manager.instance.LogToRichText("入厂地磅不可以重复打开！");
                 return;
             }
             string str_com = IniFiles.iniFile.IniReadValue("weight", "port1");
@@ -58,7 +81,8 @@ namespace LicensePlate
             if (!hasPort)
             {
                 Log.myLog.Warn("没有发现串口：" + str_com + " open failed!");
-                MessageBox.Show("没有发现串口：" + str_com + " open failed!");
+                MessageBox.Show("没有发现串口：" + str_com + " 入厂地磅 open failed!");
+                Manager.instance.LogToRichText("入厂地磅打开失败");
                 return;
             }
             m_serialPort_in.PortName = str_com; //"COM6";
@@ -73,23 +97,34 @@ namespace LicensePlate
             m_serialPort_in.ReadBufferSize = 4096;
             m_serialPort_in.WriteTimeout = 100000;
             m_serialPort_in.ReadTimeout = 100000;
-            m_serialPort_in.Open();
-            m_serialPort_in.DataReceived += new SerialDataReceivedEventHandler(Serial_DataReceived1);
 
-            isOpenIn = true;
-            Thread.Sleep(500);
-            Log.myLog.Info("串口打开成功:" + str_com);
-            UpdateInweightConnect("通讯：OK");
-            //label_in_connect.Text = "通讯：OK";
+            try
+            {
+                m_serialPort_in.Open();
+                m_serialPort_in.DataReceived += new SerialDataReceivedEventHandler(Serial_DataReceived1);
 
-            Thread.Sleep(500);
-            //开起定时器，检测是否生成记录
-            System.Timers.Timer tt = new System.Timers.Timer(2000);
-            tt.Elapsed += new System.Timers.ElapsedEventHandler(timerTheout1);//到达时间的时候执行事件；
+                isOpenIn = true;
+                Thread.Sleep(500);
+                Log.myLog.Info("串口打开成功:" + str_com);
+                UpdateInweightConnect("通讯：OK");
+                //label_in_connect.Text = "通讯：OK";
+                Manager.instance.LogToRichText("入厂地磅打开成功");
+                Thread.Sleep(500);
+                //开起定时器，检测是否生成记录
+                System.Timers.Timer tt = new System.Timers.Timer(2000);
+                loadometer_t1 = tt;
+                tt.Elapsed += new System.Timers.ElapsedEventHandler(timerTheout1);//到达时间的时候执行事件；
 
-            tt.AutoReset = true;//设置是执行一次（false）还是一直执行(true)；
+                tt.AutoReset = true;//设置是执行一次（false）还是一直执行(true)；
 
-            tt.Enabled = true;//是否执行System.Timers.Timer.Elapsed事件；
+                tt.Enabled = true;//是否执行System.Timers.Timer.Elapsed事件；
+            }
+            catch (Exception e)
+            {
+                Manager.instance.LogToRichText("入厂地磅打开失败，" + e.Message);
+                ;
+            }
+           
 
         }
 
@@ -219,6 +254,7 @@ namespace LicensePlate
         {
             if (isOpenOut)
             {
+                Manager.instance.LogToRichText("出厂地磅不可以重复打开！");
                 return;
             }
             string str_com = IniFiles.iniFile.IniReadValue("weight", "port2");
@@ -249,23 +285,35 @@ namespace LicensePlate
             m_serialPort_out.ReadBufferSize = 4096;
             m_serialPort_out.WriteTimeout = 100000;
             m_serialPort_out.ReadTimeout = 100000;
-            m_serialPort_out.Open();
-            m_serialPort_out.DataReceived += new SerialDataReceivedEventHandler(Serial_DataReceived2);
 
-            isOpenOut = true;
-            Thread.Sleep(500);
-            Log.myLog.Info("串口打开成功:" + str_com);
-            //label_out_connect.Text = "通讯：OK";
-            UpdateOutweightConnect("通讯：OK");
+            try
+            {
+                m_serialPort_out.Open();
+                m_serialPort_out.DataReceived += new SerialDataReceivedEventHandler(Serial_DataReceived2);
 
-            Thread.Sleep(500);
-            //开起定时器，检测是否生成记录
-            System.Timers.Timer tt = new System.Timers.Timer(2000);
-            tt.Elapsed += new System.Timers.ElapsedEventHandler(timerTheout2);//到达时间的时候执行事件；
+                isOpenOut = true;
+                Thread.Sleep(500);
+                Log.myLog.Info("串口打开成功:" + str_com);
+                //label_out_connect.Text = "通讯：OK";
+                UpdateOutweightConnect("通讯：OK");
+                Manager.instance.LogToRichText("出厂地磅打开成功");
+                Thread.Sleep(500);
+                //开起定时器，检测是否生成记录
+                System.Timers.Timer tt = new System.Timers.Timer(2000);
+                tt.Elapsed += new System.Timers.ElapsedEventHandler(timerTheout2);//到达时间的时候执行事件；
 
-            tt.AutoReset = true;//设置是执行一次（false）还是一直执行(true)；
+                tt.AutoReset = true;//设置是执行一次（false）还是一直执行(true)；
 
-            tt.Enabled = true;//是否执行System.Timers.Timer.Elapsed事件；
+                tt.Enabled = true;//是否执行System.Timers.Timer.Elapsed事件；
+
+                loadometer_t2 = tt;
+            }
+            catch (Exception e)
+            {
+                Manager.instance.LogToRichText("出厂地磅打开失败，"+e.Message);
+                
+            }
+           
         }
 
         private void Serial_DataReceived2(object sender, SerialDataReceivedEventArgs e)

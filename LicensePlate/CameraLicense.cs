@@ -39,7 +39,7 @@ namespace LicensePlate
             m_sAppPath = System.IO.Directory.GetCurrentDirectory();
             
         }
-
+       
         public void OpenDevice1(IntPtr pictureHand)
         {
             string ip = IniFiles.iniFile.IniReadValue("device1", "ip");
@@ -55,7 +55,8 @@ namespace LicensePlate
             int handle = VzClientSDK.VzLPRClient_Open(ip, (ushort)nPort, user, password);
             if (handle == 0)
             {
-                MessageBox.Show("打开设备失败！");
+                MessageBox.Show("入厂车牌识别设备打开失败！");
+                Manager.instance.LogToRichText("入厂车牌识别设备打开失败！");
                 return;
             }
 
@@ -155,7 +156,8 @@ namespace LicensePlate
            
             if (handle == 0)
             {
-                MessageBox.Show("打开设备失败！");
+                MessageBox.Show("出厂车牌识别设备打开失败！");
+                Manager.instance.LogToRichText("出厂车牌识别设备打开失败！");
                 return;
             }
 

@@ -58,7 +58,8 @@ namespace LicensePlate
         /// <returns>布尔值</returns> 
         public bool ExistINIFile()
         {
-            return File.Exists(inipath);
+            bool ret = File.Exists(inipath);
+            return ret;
         }
     }
 }

@@ -28,10 +28,13 @@ namespace LicensePlate
         public UpdataRedSwitchUIDelegate UpdateRedSwitchUI;
 
         SerialPort m_serialPort_RedSwitch = new SerialPort();
-       
-        int n1, n2, n3, n4, n5, n6, n7, n8, n9,n10,n11,n12,n13,n14,n15,n16;//n1-n4 入厂围栏；n5-n8 出厂围栏,n5坏了，用n9
-       
+        int[] chanState = new int[16];
+        int[] iniChan = new int[8]; //读取ini配置的，0-3入厂，4-7出厂
+        int n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12, n13, n14, n15, n16;//n1-n4 入厂围栏；n5-n8 出厂围栏,n5坏了，用n9
+
         System.Timers.Timer redSwitchTimer1;
+        System.Timers.Timer redSwitchTimer2;
+
 
         List<byte> bufList = new List<byte>(64);
 
@@ -45,12 +48,31 @@ namespace LicensePlate
         bool isOpen = false;
         public void OpenDevice()
         {
+            string str = IniFiles.iniFile.IniReadValue("redswitch", "in")+","+
+               IniFiles.iniFile.IniReadValue("redswitch", "out");
+            try
+            {
+                string[] strs = str.Split(',');
+                for (int i = 0; i < 8; i++)
+                {
+                    iniChan[i] = int.Parse(strs[i])-1;
+                }
+            }
+            catch (Exception )
+            {
+                MessageBox.Show("ini文件配置了错误的光耦通道");
+                return;
+            }
+          
+            
+
             //  Console.WriteLine(BitConverter.ToString(AddCRC(new byte[] { 0x01, 0x02, 0x00, 0x00, 0x00, 0x10 })));
             //byte[] data = new byte[] { 0x01, 0x05, 0x00, 0x01, 0x00, 0x00 };
             //data = AddCRC(data);
             //Console.WriteLine(BitConverter.ToString(data));
             if (isOpen==true)
             {
+                Manager.instance.LogToRichText("红外围栏设备不可以重复打开！"); 
                 return;
             }
 
@@ -67,7 +89,9 @@ namespace LicensePlate
             if (!hasPort)
             {
                 Log.myLog.Warn("没有发现串口：" + str_com + " open failed!");
-                MessageBox.Show("没有发现串口：" + str_com + " open failed!");
+                MessageBox.Show("没有发现串口：" + str_com + "， 红外设备 open failed!");
+                //Manager.instance.LogToRichText();
+                Manager.instance.LogToRichText("没有发现串口：" + str_com + "， 红外设备打开失败!");
                 return;
             }
             m_serialPort_RedSwitch.PortName = str_com; //"COM6";
@@ -82,37 +106,64 @@ namespace LicensePlate
             m_serialPort_RedSwitch.ReadBufferSize = 4096;
             m_serialPort_RedSwitch.WriteTimeout = 100000;
             m_serialPort_RedSwitch.ReadTimeout = 100000;
-            m_serialPort_RedSwitch.Open();
-            m_serialPort_RedSwitch.DataReceived += new SerialDataReceivedEventHandler(Serial_DataReceived_redSwitch1);
-           // m_serialPort_RedSwitch.ErrorReceived += new SerialErrorReceivedEventHandler(_serialPort_ErrorReceived);
-            Thread.Sleep(500);
-            Log.myLog.Info("串口打开成功:" + str_com);
 
-            isOpen = true;
-            Thread th = new Thread(new ThreadStart(ParseData));
-            th.IsBackground = true;
-            th.Start();
+            try
+            {
+                m_serialPort_RedSwitch.Open();
+                m_serialPort_RedSwitch.DataReceived += new SerialDataReceivedEventHandler(Serial_DataReceived_redSwitch1);
+                // m_serialPort_RedSwitch.ErrorReceived += new SerialErrorReceivedEventHandler(_serialPort_ErrorReceived);
+                Thread.Sleep(500);
+                Log.myLog.Info("串口打开成功:" + str_com);
+                Manager.instance.LogToRichText("红外设备打开成功");
+                isOpen = true;
+                Thread th = new Thread(new ThreadStart(ParseData));
+                th.IsBackground = true;
+                th.Start();
 
-            redSwitchTimer1 = new System.Timers.Timer(500);//实例化Timer类，设置间隔时间为1000毫秒；
+                redSwitchTimer1 = new System.Timers.Timer(500);//实例化Timer类，设置间隔时间为1000毫秒；
 
-            redSwitchTimer1.Elapsed += new System.Timers.ElapsedEventHandler(timerTheoutSendChannel);//到达时间的时候执行事件；
+                redSwitchTimer1.Elapsed += new System.Timers.ElapsedEventHandler(timerTheoutSendChannel);//到达时间的时候执行事件；
 
-            redSwitchTimer1.AutoReset = true;//设置是执行一次（false）还是一直执行(true)；
+                redSwitchTimer1.AutoReset = true;//设置是执行一次（false）还是一直执行(true)；
 
-            redSwitchTimer1.Enabled = true;//是否执行System.Timers.Timer.Elapsed事件；
+                redSwitchTimer1.Enabled = true;//是否执行System.Timers.Timer.Elapsed事件；
 
 
 
-            System.Timers.Timer tt = new System.Timers.Timer(1200);
-            tt.Elapsed += new System.Timers.ElapsedEventHandler(timerTheout2);//到达时间的时候执行事件；
+                redSwitchTimer1 = new System.Timers.Timer(1200);
+                redSwitchTimer1.Elapsed += new System.Timers.ElapsedEventHandler(timerTheout2);//到达时间的时候执行事件；
 
-            tt.AutoReset = true;//设置是执行一次（false）还是一直执行(true)；
+                redSwitchTimer1.AutoReset = true;//设置是执行一次（false）还是一直执行(true)；
 
-            tt.Enabled = true;//是否执行System.Timers.Timer.Elapsed事件；
+                redSwitchTimer1.Enabled = true;//是否执行System.Timers.Timer.Elapsed事件；
+                
 
+            }
+            catch (Exception e)
+            {
+                Manager.instance.LogToRichText("红外设备打开失败，"+e.Message);
+                
+            }
             
 
         }
+         ~RedSwitch()
+        {
+            if (redSwitchTimer1 != null)
+            {
+                redSwitchTimer1.Stop();
+            }
+
+            if (redSwitchTimer2 != null)
+            {
+                redSwitchTimer2.Stop();
+            }
+            if (m_serialPort_RedSwitch.IsOpen)
+            {
+                m_serialPort_RedSwitch.Close();
+            }
+        }
+
         void _serialPort_ErrorReceived(object sender, SerialErrorReceivedEventArgs e)
 
         {
@@ -388,21 +439,78 @@ namespace LicensePlate
 
                     if (bytes[2] == 0x02)
                     {
-                      //  Console.WriteLine(BitConverter.ToString(bytes));
-                        n16= (bytes[4] & 0x80) == 0x80 ? 1 : 0;
+                        chanState[15] = (bytes[4] & 0x80) == 0x80 ? 1 : 0;
+                        chanState[14] = (bytes[4] & 0x40) == 0x40 ? 1 : 0;
+                        chanState[13] = (bytes[4] & 0x20) == 0x20 ? 1 : 0;
+                        chanState[12] = (bytes[4] & 0x10) == 0x10 ? 1 : 0;
+                        chanState[11] = (bytes[4] & 0x08) == 0x08 ? 1 : 0;
+                        chanState[10] = (bytes[4] & 0x04) == 0x04 ? 1 : 0;
+                        chanState[9] = (bytes[4] & 0x02) == 0x02 ? 1 : 0;
+                        chanState[8] = (bytes[4] & 0x01) == 0x01 ? 1 : 0;
+
+                        chanState[7] = (bytes[3] & 0x80) == 0x80 ? 1 : 0;
+                        chanState[6] = (bytes[3] & 0x40) == 0x40 ? 1 : 0;
+                        chanState[5] = (bytes[3] & 0x20) == 0x20 ? 1 : 0;
+                        chanState[4] = (bytes[3] & 0x10) == 0x10 ? 1 : 0;
+                        chanState[3] = (bytes[3] & 0x08) == 0x08 ? 1 : 0;
+                        chanState[2] = (bytes[3] & 0x04) == 0x04 ? 1 : 0;
+                        chanState[1] = (bytes[3] & 0x02) == 0x02 ? 1 : 0;
+                        chanState[0] = (bytes[3] & 0x01) == 0x01 ? 1 : 0;
+
+
+
+                        UpdateRedSwitchUI(chanState[iniChan[0]],
+                            chanState[iniChan[1]],
+                            chanState[iniChan[2]],
+                            chanState[iniChan[3]],
+                            chanState[iniChan[4]],
+                            chanState[iniChan[5]],
+                            chanState[iniChan[6]],
+                            chanState[iniChan[7]]); //n5坏了，换成n9
+                        // 入厂围栏
+                        if (chanState[iniChan[0]] > 0 && chanState[iniChan[1] ]> 0 && chanState[iniChan[2]] > 0 && chanState[iniChan[3]] > 0)
+                        {
+                            Manager.instance.m_inRedSwitchOK = true;
+                        }
+                        else
+                        {
+                            Manager.instance.m_inRedSwitchOK = false;
+                        }
+
+
+                        //出厂围栏
+                        if (chanState[iniChan[4]] > 0 && chanState[iniChan[5]] > 0 && chanState[iniChan[6]] > 0 && chanState[iniChan[7]] > 0)
+                        {
+                            Manager.instance.m_outRedSwitchOK = true;
+                        }
+                        else
+                        {
+                            Manager.instance.m_outRedSwitchOK = false;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void check_optocoupler_old(byte[] bytes)
+        {
+            if (bytes[0] == 0x01)//设备地址
+            {
+                if (bytes[1] == 0x02)//0x02 查询指令，0x82 查询错误
+                {
+
+                    if (bytes[2] == 0x02)
+                    {
+
+                        n16 = (bytes[4] & 0x80) == 0x80 ? 1 : 0;
                         n15 = (bytes[4] & 0x40) == 0x40 ? 1 : 0;
-                        n14= (bytes[4] & 0x20) == 0x20 ? 1 : 0;
+                        n14 = (bytes[4] & 0x20) == 0x20 ? 1 : 0;
                         n13 = (bytes[4] & 0x10) == 0x10 ? 1 : 0;
                         n12 = (bytes[4] & 0x08) == 0x08 ? 1 : 0;
                         n11 = (bytes[4] & 0x04) == 0x04 ? 1 : 0;
                         n10 = (bytes[4] & 0x02) == 0x02 ? 1 : 0;
                         n9 = (bytes[4] & 0x01) == 0x01 ? 1 : 0;
-                       // Console.WriteLine("N9 ="+ n9);
-                        //if (bytes[4]>0)
-                        //{
-                        //    Console.WriteLine(BitConverter.ToString(new byte[] { bytes[4] }));
-                        //    n9 = 1;
-                        //}
+
                         n8 = (bytes[3] & 0x80) == 0x80 ? 1 : 0;
                         n7 = (bytes[3] & 0x40) == 0x40 ? 1 : 0;
                         n6 = (bytes[3] & 0x20) == 0x20 ? 1 : 0;
@@ -411,22 +519,7 @@ namespace LicensePlate
                         n3 = (bytes[3] & 0x04) == 0x04 ? 1 : 0;
                         n2 = (bytes[3] & 0x02) == 0x02 ? 1 : 0;
                         n1 = (bytes[3] & 0x01) == 0x01 ? 1 : 0;
-                        //Console.WriteLine("n1=" + n1);
-                        //Console.WriteLine("n2=" + n2);
-                        //Console.WriteLine("n3=" + n3);
-                        //Console.WriteLine("n4=" + n4);
-                        //Console.WriteLine("n5=" + n5);
-                        //Console.WriteLine("n6=" + n6);
-                        //Console.WriteLine("n7=" + n7);
-                        //Console.WriteLine("n8=" + n8);
-                        //Console.WriteLine("n9=" + n9);
-                        //Console.WriteLine("n10=" + n10);
-                        //Console.WriteLine("n11=" + n11);
-                        //Console.WriteLine("n12=" + n12);
-                        //Console.WriteLine("n13=" + n13);
-                        //Console.WriteLine("n14=" + n14);
-                        //Console.WriteLine("n15=" + n15);
-                        //Console.WriteLine("n16=" + n16);
+
 
                         UpdateRedSwitchUI(n1, n2, n3, n4, n9, n6, n7, n8); //n5坏了，换成n9
                         // 入厂围栏

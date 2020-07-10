@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
-//识别车牌-》红外检测-》称重稳定-》生成记录-》打印
+//识别车牌-》红外检测-》称重稳定-》生成记录-》打印   远程=》1826320469
 namespace LicensePlate
 {
     public partial class Form1 : Form
@@ -27,13 +27,18 @@ namespace LicensePlate
 
         MessageShowForm f1 = new MessageShowForm("入厂围栏有遮挡");
        // MessageShowForm f2 = new MessageShowForm("出厂围栏有遮挡");
-
+        void LogToRichText(string message)
+        {
+            string t = System.DateTime.Now.ToString("MM-dd HH:mm");
+            richTextBox_Log.AppendText(t + ":" + message + "\r\n");
+        }
         void ShowHideMessageForm(string message , bool isShow)
         {
             if (isShow)
             {
                 f1.Show();
                 f1.SetText(message);
+                LogToRichText(message);
             }
             else
             {
@@ -132,12 +137,12 @@ namespace LicensePlate
         {
            
           //  testSerial();
-            Log.myLog.Trace("trace");
-            Log.myLog.Info("info");
-            Log.myLog.Warn("warn");
+            //Log.myLog.Trace("trace");
+            //Log.myLog.Info("info");
+            //Log.myLog.Warn("warn");
 
-            Log.myLog.Error("error");
-            Log.myLog.Fatal("fatal");
+            //Log.myLog.Error("error");
+            //Log.myLog.Fatal("fatal");
             this.Resize += new EventHandler(MainForm_Resize); //添加窗体拉伸重绘事件
             xvalues = this.Width;//记录窗体初始大小
             yvalues = this.Height;
@@ -150,11 +155,18 @@ namespace LicensePlate
 
         public void Init()
         {
+            if (!IniFiles.iniFile.ExistINIFile())
+            {
+                MessageBox.Show("配置文件sett.ini缺失！请退出！");
+                return;
+            }
             Manager.instance.init();
             Manager.instance.InsertIndexListView = new Manager.InsertIndexListViewDelegate(insertToListView1);
             Manager.instance.UpdeteIndexListView = new Manager.UpdeteIndexListViewDelegate(updateListView1);
             Manager.instance.ShowHideMessage = new Manager.ShowMessageDelegate(ShowHideMessageForm);
             Manager.instance.GetIDbyInChepai += GetIDbyInchepai;
+            Manager.instance.LogToRichText += LogToRichText;
+
 
             m_CameraLicense = new CameraLicense();
             m_CameraLicense.Init();
@@ -180,7 +192,10 @@ namespace LicensePlate
            
 
             initListview1();
+            initBlackList();
         }
+
+       
         private void MainForm_Resize(object sender, EventArgs e)//重绘事件
         {
             float newX = this.Width / xvalues;//获得比例
@@ -371,13 +386,6 @@ namespace LicensePlate
 
             string commdStr = "select * from chepai where out_time is null or in_time is null ";
 
-          
-               // commdStr = string.Format("select * from chepai where in_chepai='{0}' and in_time>'{1}' and in_time<'{2}' order by in_time desc limit 100", cpai, t1, t2);
-          
-               // commdStr = string.Format("select * from chepai where  in_time>'{1}' and in_time<'{2}' order by in_time desc limit 100", cpai, t1, t2);
-
-        
-
             MySqlDataReader dr = MysqlHelp.Instance.DoGetReader(commdStr);
             if (dr != null)
             {
@@ -405,16 +413,31 @@ namespace LicensePlate
 
                     if (in_time == "")
                     {
-                        Manager.instance.m_cheOutList.Add(chepai);
+                        //Manager.instance.m_cheOutList.Add(chepai);
                     }else if (out_time == "")
                     {
-                       // Manager.instance.m_cheInList.Add(chepai);
+                        Manager.instance.m_cheInList.Add(chepai);
                     }
                  
                 }
                 dr.Close();
             }
 
+        }
+
+        void initBlackList()
+        {
+            string sql = "select chepai from blacklist";
+            MySqlDataReader dr = MysqlHelp.Instance.DoGetReader(sql);
+            if (dr!=null)
+            {
+                while (dr.Read())
+                {
+                    Manager.instance.m_blackList.Add(dr["chepai"].ToString());
+                }
+                dr.Close();
+            }
+          
         }
 
         string GetIDbyInchepai(string in_chepai)
@@ -449,6 +472,7 @@ namespace LicensePlate
                     int w_in = int.Parse(listView1.Items[i].SubItems[3].Text);
                     int w_out = int.Parse(listView1.Items[i].SubItems[4].Text);
                     listView1.Items[i].SubItems[5].Text = (w_in-w_out).ToString();
+                    listView1.Items[i].BackColor = Color.White;
                     return ;
 
                 }
@@ -579,6 +603,27 @@ namespace LicensePlate
                         if (item.SubItems[1].Text==""|| item.SubItems[2].Text=="")//入厂时间和出厂时间有一个为空才能修改车牌，完整记录不能炒作
                         {
                             item.SubItems[6].Text = textBox_chepai.Text;
+                            string in_time_str = item.SubItems[1].Text;
+                            string id_str = item.SubItems[0].Text;
+                            string sql;
+                            if (in_time_str=="")
+                            {
+                                sql = $"update chepai set out_chepai='{textBox_chepai.Text}' where ID={id_str}";
+                            }
+                            else
+                            {
+                                sql = $"update chepai set in_chepai='{textBox_chepai.Text}' where ID={id_str}";
+                            }
+                           int ret = MysqlHelp.Instance.Do(sql);
+                            if (ret==1)
+                            {
+                                MessageBox.Show("修改成功");
+                            }
+                            else
+                            {
+                                MessageBox.Show("修改失败");
+                            }
+
                         }
                         else
                         {
@@ -715,73 +760,96 @@ namespace LicensePlate
 
         public void UpdeteRedSwitchUI(int n1, int n2, int n3, int n4, int n5, int n6, int n7, int n8)
         {
-            if (n1 > 0)
+            if (Manager.instance.ignore_in_redSwitch)
             {
-                pictureBox_in_left.BackColor = Color.Green;
+                pictureBox_in_left.BackColor = Color.LightGray;
+                pictureBox_in_top.BackColor = Color.LightGray;
+                pictureBox_in_right.BackColor = Color.LightGray;
+                pictureBox_in_bottom.BackColor = Color.LightGray;
             }
             else
             {
-                pictureBox_in_left.BackColor = Color.Red;
+                if (n1 > 0)
+                {
+                    pictureBox_in_left.BackColor = Color.Green;
+                }
+                else
+                {
+                    pictureBox_in_left.BackColor = Color.Red;
+                }
+
+                if (n2 > 0)
+                {
+                    pictureBox_in_top.BackColor = Color.Green;
+                }
+                else
+                {
+                    pictureBox_in_top.BackColor = Color.Red;
+                }
+                if (n3 > 0)
+                {
+                    pictureBox_in_right.BackColor = Color.Green;
+                }
+                else
+                {
+                    pictureBox_in_right.BackColor = Color.Red;
+                }
+                if (n4 > 0)
+                {
+                    pictureBox_in_bottom.BackColor = Color.Green;
+                }
+                else
+                {
+                    pictureBox_in_bottom.BackColor = Color.Red;
+                }
+
             }
 
-            if (n2 > 0)
+            if (Manager.instance.ignore_out_redSwitch)
             {
-                pictureBox_in_top.BackColor = Color.Green;
+                pictureBox_out_left.BackColor = Color.LightGray;
+                pictureBox_out_top.BackColor = Color.LightGray;
+                pictureBox_out_right.BackColor = Color.LightGray;
+                pictureBox_out_bottom.BackColor = Color.LightGray;
+
             }
             else
             {
-                pictureBox_in_top.BackColor = Color.Red;
-            }
-            if (n3 > 0)
-            {
-                pictureBox_in_right.BackColor = Color.Green;
-            }
-            else
-            {
-                pictureBox_in_right.BackColor = Color.Red;
-            }
-            if (n4 > 0)
-            {
-                pictureBox_in_bottom.BackColor = Color.Green;
-            }
-            else
-            {
-                pictureBox_in_bottom.BackColor = Color.Red;
+                if (n5 > 0)
+                {
+                    pictureBox_out_left.BackColor = Color.Green;
+                }
+                else
+                {
+                    pictureBox_out_left.BackColor = Color.Red;
+                }
+
+                if (n6 > 0)
+                {
+                    pictureBox_out_top.BackColor = Color.Green;
+                }
+                else
+                {
+                    pictureBox_out_top.BackColor = Color.Red;
+                }
+                if (n7 > 0)
+                {
+                    pictureBox_out_right.BackColor = Color.Green;
+                }
+                else
+                {
+                    pictureBox_out_right.BackColor = Color.Red;
+                }
+                if (n8 > 0)
+                {
+                    pictureBox_out_bottom.BackColor = Color.Green;
+                }
+                else
+                {
+                    pictureBox_out_bottom.BackColor = Color.Red;
+                }
             }
 
-            if (n5 > 0)
-            {
-                pictureBox_out_left.BackColor = Color.Green;
-            }
-            else
-            {
-                pictureBox_out_left.BackColor = Color.Red;
-            }
-
-            if (n6 > 0)
-            {
-                pictureBox_out_top.BackColor = Color.Green;
-            }
-            else
-            {
-                pictureBox_out_top.BackColor = Color.Red;
-            }
-            if (n7 > 0)
-            {
-                pictureBox_out_right.BackColor = Color.Green;
-            }
-            else
-            {
-                pictureBox_out_right.BackColor = Color.Red;
-            }
-            if (n8 > 0)
-            {
-                pictureBox_out_bottom.BackColor = Color.Green;
-            }
-            else
-            {
-                pictureBox_out_bottom.BackColor = Color.Red;
-            }
         }
         private void 打开入厂红外设备ToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -928,6 +996,86 @@ namespace LicensePlate
             m_LEDControl.OpenDevice2();
             Thread.Sleep(1500);
             ShowHideMessageForm("出厂设备启动完成", true);
+        }
+
+        private void 测试ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            测试ToolStripMenuItem.Text = "测试👌";
+            new PrintPage().PrintPageTest();
+        }
+
+        private void 预览ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (预览ToolStripMenuItem.Text.Contains("√"))
+            {
+                Manager.instance.isPreviewPrint = false;
+                预览ToolStripMenuItem.Text = "预览";
+            }
+            else
+            {
+                Manager.instance.isPreviewPrint = true;
+                预览ToolStripMenuItem.Text = "预览 √";
+            }
+           
+        }
+
+        private void button_AddBlackList_Click(object sender, EventArgs e)
+        {
+            string selectChepai = textBox_chepai.Text;
+            if (selectChepai.Length>5&&selectChepai.Length<10)
+            {
+                if (button_AddBlackList.Text.Contains("取消"))
+                {
+                   bool ret =  Manager.instance.RemoveBlackList(selectChepai);
+                    if (ret)
+                    {
+                        button_AddBlackList.Text = "拉黑";
+                        MessageBox.Show("已加入白名单！");
+                    }
+                    else
+                    {
+                        MessageBox.Show("加入白名单失败！");
+                    }
+                }
+                else
+                {
+                   bool ret = Manager.instance.AddBlackList(selectChepai);
+                    if (ret)
+                    {
+                        button_AddBlackList.Text = "取消拉黑";
+                        MessageBox.Show("已加入黑名单！");
+                    }
+                    else
+                    {
+                        MessageBox.Show("加入黑名单失败！");
+                    }
+                }
+
+            }
+            else
+            {
+                MessageBox.Show("无效的车牌号！");
+            }
+        }
+
+        private void textBox_chepai_TextChanged(object sender, EventArgs e)
+        {
+            string str = textBox_chepai.Text;
+            str = Manager.instance.m_blackList.Find((data) => data == str.Trim());
+            if (!string.IsNullOrEmpty(str))
+            {
+                button_AddBlackList.Text = "取消拉黑";
+            }
+            else
+            {
+                button_AddBlackList.Text = "拉黑";
+            }
+        }
+
+        private void 黑名单ToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            BlackListForm formBlack = new BlackListForm();
+            formBlack.Show();
         }
     }
 }
