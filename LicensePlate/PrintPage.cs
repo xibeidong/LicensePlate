@@ -62,7 +62,7 @@ namespace LicensePlate
                 printDoc.PrintPage += new PrintPageEventHandler(printDoc_PrintPage); //打印事件 
                 printDoc.EndPrint += new PrintEventHandler(printDoc_EndPrint);
                 ppvw.Document.DefaultPageSettings.Landscape = false;    // 设置打印为横向   
-                if (!Manager.instance.isPreviewPrint)
+                if (!Manager.Instance.isPreviewPrint)
                 {
                     printDoc.Print();   //直接打印，不预览的样式   
                 }

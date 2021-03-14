@@ -113,9 +113,9 @@ namespace LicensePlate
                     foreach (ListViewItem item in this.listView1.SelectedItems)
                     {
                         item.Checked = false;
-                        if (Manager.instance.userInfo.level!=RootLevel.Highest)
+                        if ((int)Manager.Instance.userInfo.level>1)
                         {
-                            MessageBox.Show("需要最高权限，当前用户权限不够，不能操作黑名单","警告");
+                            MessageBox.Show("当前用户权限不够，不能操作黑名单","警告");
                             return;
                         }
                         string chepai = item.SubItems[1].Text;
@@ -125,7 +125,7 @@ namespace LicensePlate
                             int ret = MysqlHelp.Instance.Do(sql);
                             if (ret>0)
                             {
-                                Manager.instance.m_blackList.Remove(chepai);
+                                Manager.Instance.m_blackList.Remove(chepai);
                                 MessageBox.Show($"{chepai} 成功加入白名单");
                                 item.Remove();
                             }

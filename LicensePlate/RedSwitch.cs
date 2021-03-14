@@ -72,7 +72,7 @@ namespace LicensePlate
             //Console.WriteLine(BitConverter.ToString(data));
             if (isOpen==true)
             {
-                Manager.instance.LogToRichText("红外围栏设备不可以重复打开！"); 
+                Manager.Instance.LogToRichText("红外围栏设备不可以重复打开！"); 
                 return;
             }
 
@@ -91,7 +91,7 @@ namespace LicensePlate
                 Log.myLog.Warn("没有发现串口：" + str_com + " open failed!");
                 MessageBox.Show("没有发现串口：" + str_com + "， 红外设备 open failed!");
                 //Manager.instance.LogToRichText();
-                Manager.instance.LogToRichText("没有发现串口：" + str_com + "， 红外设备打开失败!");
+                Manager.Instance.LogToRichText("没有发现串口：" + str_com + "， 红外设备打开失败!");
                 return;
             }
             m_serialPort_RedSwitch.PortName = str_com; //"COM6";
@@ -114,7 +114,7 @@ namespace LicensePlate
                 // m_serialPort_RedSwitch.ErrorReceived += new SerialErrorReceivedEventHandler(_serialPort_ErrorReceived);
                 Thread.Sleep(500);
                 Log.myLog.Info("串口打开成功:" + str_com);
-                Manager.instance.LogToRichText("红外设备打开成功");
+                Manager.Instance.LogToRichText("红外设备打开成功");
                 isOpen = true;
                 Thread th = new Thread(new ThreadStart(ParseData));
                 th.IsBackground = true;
@@ -141,7 +141,7 @@ namespace LicensePlate
             }
             catch (Exception e)
             {
-                Manager.instance.LogToRichText("红外设备打开失败，"+e.Message);
+                Manager.Instance.LogToRichText("红外设备打开失败，"+e.Message);
                 
             }
             
@@ -470,22 +470,22 @@ namespace LicensePlate
                         // 入厂围栏
                         if (chanState[iniChan[0]] > 0 && chanState[iniChan[1] ]> 0 && chanState[iniChan[2]] > 0 && chanState[iniChan[3]] > 0)
                         {
-                            Manager.instance.m_inRedSwitchOK = true;
+                            Manager.Instance.m_inRedSwitchOK = true;
                         }
                         else
                         {
-                            Manager.instance.m_inRedSwitchOK = false;
+                            Manager.Instance.m_inRedSwitchOK = false;
                         }
 
 
                         //出厂围栏
                         if (chanState[iniChan[4]] > 0 && chanState[iniChan[5]] > 0 && chanState[iniChan[6]] > 0 && chanState[iniChan[7]] > 0)
                         {
-                            Manager.instance.m_outRedSwitchOK = true;
+                            Manager.Instance.m_outRedSwitchOK = true;
                         }
                         else
                         {
-                            Manager.instance.m_outRedSwitchOK = false;
+                            Manager.Instance.m_outRedSwitchOK = false;
                         }
                     }
                 }
@@ -525,22 +525,22 @@ namespace LicensePlate
                         // 入厂围栏
                         if (n1 > 0 && n2 > 0 && n3 > 0 && n4 > 0)
                         {
-                            Manager.instance.m_inRedSwitchOK = true;
+                            Manager.Instance.m_inRedSwitchOK = true;
                         }
                         else
                         {
-                            Manager.instance.m_inRedSwitchOK = false;
+                            Manager.Instance.m_inRedSwitchOK = false;
                         }
 
 
                         //出厂围栏
                         if (n9 > 0 && n6 > 0 && n7 > 0 && n8 > 0)
                         {
-                            Manager.instance.m_outRedSwitchOK = true;
+                            Manager.Instance.m_outRedSwitchOK = true;
                         }
                         else
                         {
-                            Manager.instance.m_outRedSwitchOK = false;
+                            Manager.Instance.m_outRedSwitchOK = false;
                         }
                     }
                 }

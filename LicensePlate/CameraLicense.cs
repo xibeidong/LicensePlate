@@ -43,20 +43,20 @@ namespace LicensePlate
         public void OpenDevice1(IntPtr pictureHand)
         {
             string ip = IniFiles.iniFile.IniReadValue("device1", "ip");
-            string com = IniFiles.iniFile.IniReadValue("device1", "com");
+            string port = IniFiles.iniFile.IniReadValue("device1", "com"); //port
             string user = IniFiles.iniFile.IniReadValue("device1", "user");
             string password = IniFiles.iniFile.IniReadValue("device1", "password");
             Log.myLog.Info("ip=" + ip);
-            Log.myLog.Info("com=" + com);
+            Log.myLog.Info("com=" + port);
             Log.myLog.Info("user=" + user);
             Log.myLog.Info("password=" + password);
 
-            short nPort = Int16.Parse(com);
+            short nPort = Int16.Parse(port);
             int handle = VzClientSDK.VzLPRClient_Open(ip, (ushort)nPort, user, password);
             if (handle == 0)
             {
                 MessageBox.Show("入厂车牌识别设备打开失败！");
-                Manager.instance.LogToRichText("入厂车牌识别设备打开失败！");
+                Manager.Instance.LogToRichText("入厂车牌识别设备打开失败！");
                 return;
             }
 
@@ -91,12 +91,12 @@ namespace LicensePlate
 
                 Log.myLog.Info(string.Format("chepai='{0}'", strLicense));
 
-                if (Manager.instance.m_oldInChepai == strLicense || strLicense.Contains(Manager.instance.m_oldInChepai))
+                if (Manager.Instance.m_oldInChepai == strLicense || strLicense.Contains(Manager.Instance.m_oldInChepai))
                 {
                     //车牌识别重复，不处理
-                    Manager.instance.m_inChepaiChange = false;
+                    Manager.Instance.m_inChepaiChange = false;
                     Console.WriteLine("车牌识别重复，不处理");
-                    Console.WriteLine("m_oldInChepai = "+ Manager.instance.m_oldInChepai);
+                    Console.WriteLine("m_oldInChepai = "+ Manager.Instance.m_oldInChepai);
                     Console.WriteLine("strLicense = " + strLicense);
 
                     MessageBox.Show("车牌和上一车辆相同，禁止入厂，请车辆退出地磅！！");
@@ -105,10 +105,10 @@ namespace LicensePlate
                 else
                 {
                     //车牌
-                    Manager.instance.m_inChepaiChange = true;
+                    Manager.Instance.m_inChepaiChange = true;
                 }
                 Log.myLog.Info("=======>strLicense:  " + strLicense);
-                Log.myLog.Info("=======>m_oldInChepai:  " + Manager.instance.m_oldInChepai);
+                Log.myLog.Info("=======>m_oldInChepai:  " + Manager.Instance.m_oldInChepai);
 
                 VzClientSDK.VZ_LPR_MSG_PLATE_INFO plateInfo = new VzClientSDK.VZ_LPR_MSG_PLATE_INFO();
                 plateInfo.plate = strLicense;
@@ -133,7 +133,7 @@ namespace LicensePlate
                 //pictureBox_in_img.Image = Image.FromFile(path);
                 UpdateInChepaiImage(path);
 
-                Manager.instance.ledControl.InLEDTextUpdate(strLicense, "进行中...");
+                Manager.Instance.ledControl.InLEDTextUpdate(strLicense, "进行中...");
 
             }
 
@@ -143,21 +143,21 @@ namespace LicensePlate
         public void OpenDevice2(IntPtr pictureHand)
         {
             string ip = IniFiles.iniFile.IniReadValue("device2", "ip");
-            string com = IniFiles.iniFile.IniReadValue("device2", "com");
+            string port = IniFiles.iniFile.IniReadValue("device2", "com");
             string user = IniFiles.iniFile.IniReadValue("device2", "user");
             string password = IniFiles.iniFile.IniReadValue("device2", "password");
             Log.myLog.Info("ip=" + ip);
-            Log.myLog.Info("com=" + com);
+            Log.myLog.Info("com=" + port);
             Log.myLog.Info("user=" + user);
             Log.myLog.Info("password=" + password);
 
-            short nPort = Int16.Parse(com);
+            short nPort = Int16.Parse(port);
             int handle = VzClientSDK.VzLPRClient_Open(ip, (ushort)nPort, user, password);
            
             if (handle == 0)
             {
                 MessageBox.Show("出厂车牌识别设备打开失败！");
-                Manager.instance.LogToRichText("出厂车牌识别设备打开失败！");
+                Manager.Instance.LogToRichText("出厂车牌识别设备打开失败！");
                 return;
             }
 
@@ -185,20 +185,20 @@ namespace LicensePlate
                 //label_out_chepai.Text = strLicense;
                 //strLicense = label_out_chepai.Text.Trim();
 
-                if (Manager.instance.m_oldOutChepai == strLicense || strLicense.Contains(Manager.instance.m_oldOutChepai))
+                if (Manager.Instance.m_oldOutChepai == strLicense || strLicense.Contains(Manager.Instance.m_oldOutChepai))
                 {
-                    Manager.instance.m_outChepaiChange = false;
+                    Manager.Instance.m_outChepaiChange = false;
                     MessageBox.Show("车牌和上一车辆相同，禁止出厂，请车辆退出地磅！！");
                     return 0;
                 }
                 else
                 {
-                    Manager.instance.m_outChepaiChange = true;
+                    Manager.Instance.m_outChepaiChange = true;
                 }
 
                 Log.myLog.Info(string.Format("chepai='{0}'", strLicense));
                 Log.myLog.Info("=======>strLicense:  " + strLicense);
-                Log.myLog.Info("=======>m_oldOutChepai:  " + Manager.instance.m_oldOutChepai);
+                Log.myLog.Info("=======>m_oldOutChepai:  " + Manager.Instance.m_oldOutChepai);
 
                 VzClientSDK.VZ_LPR_MSG_PLATE_INFO plateInfo = new VzClientSDK.VZ_LPR_MSG_PLATE_INFO();
                 plateInfo.plate = strLicense;
@@ -223,7 +223,7 @@ namespace LicensePlate
                 UpdateOutChepai(strLicense);
                 UpdateOutChepaiImage(path);
 
-                Manager.instance.ledControl.OutLEDTextUpdate(strLicense, "进行中...");
+                Manager.Instance.ledControl.OutLEDTextUpdate(strLicense, "进行中...");
 
             }
 

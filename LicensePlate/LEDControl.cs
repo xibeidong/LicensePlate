@@ -16,6 +16,7 @@ namespace LicensePlate
         int GrayLevel1 = 1;
         int LedWidth1 = 120;
         int LedHeight1 = 80;
+        int LedUse1 = 0;
 
         string ip2 = "192.168.1.200";
         int LedNumber2 = 1;
@@ -23,6 +24,7 @@ namespace LicensePlate
         int GrayLevel2 = 1;
         int LedWidth2 = 120;
         int LedHeight2 = 80;
+        int LedUse2 = 0;
 
         public LEDControl()
         {
@@ -52,6 +54,9 @@ namespace LicensePlate
             string LedHeightStr = IniFiles.iniFile.IniReadValue("LED1", "LedHeight");
             LedHeight1 = int.Parse(LedHeightStr);
 
+            string Leduse1Str = IniFiles.iniFile.IniReadValue("LED1", "use");
+            LedUse1 = int.Parse(Leduse1Str);
+
 
             ip2 = IniFiles.iniFile.IniReadValue("LED2", "ip");
 
@@ -70,11 +75,16 @@ namespace LicensePlate
             LedHeightStr = IniFiles.iniFile.IniReadValue("LED2", "LedHeight");
             LedHeight2 = int.Parse(LedHeightStr);
 
-
+            string Leduse2Str = IniFiles.iniFile.IniReadValue("LED2", "use");
+            LedUse2 = int.Parse(Leduse2Str);
 
         }
         public void OpenDevice1()
         {
+            if (LedUse1==0)
+            {
+                return;//不使用LED功能
+            }
             
             int nResult;
             LedDll.COMMUNICATIONINFO CommunicationInfo = new LedDll.COMMUNICATIONINFO();//定义一通讯参数结构体变量用于对设定的LED通讯，具体对此结构体元素赋值说明见COMMUNICATIONINFO结构体定义部份注示
@@ -93,7 +103,7 @@ namespace LicensePlate
                 ErrStr = LedDll.LS_GetError(nResult);
                 Log.myLog.Info("入厂LED，设置失败！");
                 MessageBox.Show(ErrStr);
-                Manager.instance.LogToRichText("入厂LED，"+ErrStr);
+                Manager.Instance.LogToRichText("入厂LED，"+ErrStr);
                 return;
             }
             else
@@ -110,6 +120,10 @@ namespace LicensePlate
 
         public void OpenDevice2()
         {
+            if (LedUse2 == 0)
+            {
+                return;//不使用LED功能
+            }
             int nResult;
             LedDll.COMMUNICATIONINFO CommunicationInfo = new LedDll.COMMUNICATIONINFO();//定义一通讯参数结构体变量用于对设定的LED通讯，具体对此结构体元素赋值说明见COMMUNICATIONINFO结构体定义部份注示
                                                                                         //ZeroMemory(&CommunicationInfo,sizeof(COMMUNICATIONINFO));
@@ -127,7 +141,7 @@ namespace LicensePlate
                 ErrStr = LedDll.LS_GetError(nResult);
                 Log.myLog.Info("出厂LED，设置失败！");
                 MessageBox.Show(ErrStr);
-                Manager.instance.LogToRichText("出厂LED，" + ErrStr);
+                Manager.Instance.LogToRichText("出厂LED，" + ErrStr);
                 return;
             }
             else
@@ -583,6 +597,10 @@ namespace LicensePlate
 
         public void InLEDTextUpdate(string chepai,string weight)
         {
+            if (LedUse1 == 0)
+            {
+                return;//不使用LED功能
+            }
 
             TestLEDTextUpdate(chepai, weight);
            
@@ -603,6 +621,11 @@ namespace LicensePlate
 
         public void OutLEDTextUpdate(string chepai, string weight)
         {
+            if (LedUse2 == 0)
+            {
+                return;//不使用LED功能
+            }
+
             TestLEDTextUpdate2(chepai, weight);
 
 

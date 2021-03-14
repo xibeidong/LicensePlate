@@ -72,17 +72,17 @@ namespace LicensePlate
                 myConnnect2.Open();
                 myConnnect2.Close();
                 MessageBox.Show("数据库正常");
-                return;
+              //  return;
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.Message+ "(数据库连接成功，即将进行初始化)");
+                MessageBox.Show(e.Message+ "(数据库连接成功，正在更新)");
             }
 
             //初始化数据库(建库建表)
             string connectStr = string.Format("datasource={0};port=3306;user={1};pwd={2};", datasource, user, password);
             MySqlConnection conn = new MySqlConnection(connectStr);
-            string commandStr = string.Format("CREATE DATABASE {0};",database);
+            string commandStr = string.Format("CREATE DATABASE IF NOT EXISTS {0};", database);
             MySqlCommand cmd = new MySqlCommand(commandStr, conn);
             
             conn.Open();
@@ -100,14 +100,14 @@ namespace LicensePlate
           //  CreatTable1();
 
             //表一：
-            string sql = "CREATE TABLE blacklist (chepai varchar(50) not null, add_time datetime,do_user varchar(50),PRIMARY KEY (chepai))";
+            string sql = "CREATE TABLE IF NOT EXISTS blacklist (chepai varchar(50) not null, add_time datetime,do_user varchar(50),PRIMARY KEY (chepai))";
             bool ret2 = CreatTableBySqlStr(sql);
             if (!ret2)
             {
                 MessageBox.Show("初始化失败，创建表1失败！");
             }
             //表二：
-            sql = "CREATE TABLE account(username varchar(50) not null,password varchar(50) not null,add_time datetime not null,PRIMARY KEY (username)) ";
+            sql = "CREATE TABLE IF NOT EXISTS account(username varchar(50) not null,password varchar(50) not null,add_time datetime not null,level int ,PRIMARY KEY (username)) ";
             ret2=CreatTableBySqlStr(sql);
             if (!ret2)
             {
@@ -117,11 +117,26 @@ namespace LicensePlate
            *表三：id，入厂时间，出厂时间，入厂重量，出厂重量，货物重量，车牌号，入厂截图，出厂截图
 
           */
-            sql = "CREATE TABLE chepai (ID int not null auto_increment, in_time datetime,out_time datetime,in_weight double,out_weight double,suttle double,in_chepai varchar(50),out_chepai varchar(50),in_img varchar(200),out_img varchar(200),state tinyint(10) DEFAULT 0, PRIMARY KEY (ID))";
+            sql = "CREATE TABLE IF NOT EXISTS chepai (ID int not null auto_increment, in_time datetime,out_time datetime,in_weight double,out_weight double,suttle double,in_chepai varchar(50),out_chepai varchar(50),in_img varchar(200),out_img varchar(200),state tinyint(10) DEFAULT 0, PRIMARY KEY (ID))";
             ret2 = CreatTableBySqlStr(sql);
             if (!ret2)
             {
                 MessageBox.Show("初始化失败，创建表3失败！");
+            }
+
+            //表四：
+            sql = "CREATE TABLE IF NOT EXISTS whitelist (chepai varchar(50) not null, add_time datetime,do_user varchar(50),PRIMARY KEY (chepai))";
+            ret2 = CreatTableBySqlStr(sql);
+            if (!ret2)
+            {
+                MessageBox.Show("初始化失败，创建表4失败！");
+            }
+
+            sql = "INSERT IGNORE INTO account ()VALUES('admin','123456',NOW(),0) ";
+            ret2 = CreatTableBySqlStr(sql);
+            if (!ret2)
+            {
+                MessageBox.Show("初始化失败，admin写入失败！");
             }
         }
 
@@ -275,10 +290,5 @@ namespace LicensePlate
             return ret;
         }
        
-
-        public DataTable ExecuteDataTable(string commdStr)
-        {
-            return null;
-        }
     }
 }

@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
-//识别车牌-》红外检测-》称重稳定-》生成记录-》打印   远程=》1826320469
+//识别车牌-》红外检测-》称重稳定-》生成记录-》打印  
 namespace LicensePlate
 {
     public partial class Form1 : Form
@@ -148,9 +148,27 @@ namespace LicensePlate
             yvalues = this.Height;
             SetTag(this);
             Init();
-
-           // testSQl();
+            button_AddBlackList.Hide();
            
+            foreach (ToolStripMenuItem item in this.menuStrip1.Items)
+            {
+               // Console.WriteLine(item.Name);
+                foreach (ToolStripMenuItem subItem in item.DropDownItems)
+                {
+                   // Console.WriteLine(subItem.Name);
+                    if (subItem.Name != "登录ToolStripMenuItem1" )
+                    {
+                        subItem.Enabled = false;
+                    }
+                    if (subItem.Name.Contains("检查数据库"))
+                    {
+                        subItem.Enabled = true;
+                    }
+                }
+            }
+
+            // testSQl();
+          
         }
 
         public void Init()
@@ -160,13 +178,13 @@ namespace LicensePlate
                 MessageBox.Show("配置文件sett.ini缺失！请退出！");
                 return;
             }
-            Manager.instance.init();
-            Manager.instance.InsertIndexListView = new Manager.InsertIndexListViewDelegate(insertToListView1);
-            Manager.instance.UpdeteIndexListView = new Manager.UpdeteIndexListViewDelegate(updateListView1);
-            Manager.instance.ShowHideMessage = new Manager.ShowMessageDelegate(ShowHideMessageForm);
-            Manager.instance.GetIDbyInChepai += GetIDbyInchepai;
-            Manager.instance.LogToRichText += LogToRichText;
-
+            Manager.Instance.init();
+            Manager.Instance.InsertIndexListView = new Manager.InsertIndexListViewDelegate(insertToListView1);
+            Manager.Instance.UpdeteIndexListView = new Manager.UpdeteIndexListViewDelegate(updateListView1);
+            Manager.Instance.ShowHideMessage = new Manager.ShowMessageDelegate(ShowHideMessageForm);
+            Manager.Instance.GetIDbyInChepai += GetIDbyInchepai;
+            Manager.Instance.LogToRichText += LogToRichText;
+            Manager.Instance.LoginSuccess += LoginSucess;
 
             m_CameraLicense = new CameraLicense();
             m_CameraLicense.Init();
@@ -184,18 +202,36 @@ namespace LicensePlate
             m_Loadometer.UpdateOutweightConnect = new Loadometer.UpdateOutweightStateDelegate(UpdateOutweightConnect);
 
             m_RedSwitch = new RedSwitch();
-            Manager.instance.redSwitch = m_RedSwitch;
+            Manager.Instance.redSwitch = m_RedSwitch;
             m_RedSwitch.UpdateRedSwitchUI = new RedSwitch.UpdataRedSwitchUIDelegate(UpdeteRedSwitchUI);
 
             m_LEDControl = new LEDControl();
-            Manager.instance.ledControl = m_LEDControl;
+            Manager.Instance.ledControl = m_LEDControl;
            
 
             initListview1();
-            initBlackList();
+            initWhiteList();
         }
 
-       
+        private void LoginSucess()
+        {
+            foreach (ToolStripMenuItem item in this.menuStrip1.Items)
+            {
+                Console.WriteLine(item.Name);
+                foreach (ToolStripMenuItem subItem in item.DropDownItems)
+                {
+                    Console.WriteLine(subItem.Name);
+                    if (subItem.Name != "登录ToolStripMenuItem1")
+                    {
+                        subItem.Enabled = true;
+                    }
+                    else
+                    {
+                        subItem.Enabled = false;
+                    }
+                }
+            }
+        }
         private void MainForm_Resize(object sender, EventArgs e)//重绘事件
         {
             float newX = this.Width / xvalues;//获得比例
@@ -266,45 +302,61 @@ namespace LicensePlate
         public void UpdateInchepaiLabel(string str)
         {
             label_in_chepai.Text = str;
-            Manager.instance.m_inChepai = label_in_chepai.Text;
+            Manager.Instance.m_inChepai = label_in_chepai.Text;
         }
         public void UpdateOutchepaiLabel(string str)
         {
             label_out_chepai.Text = str;
-            Manager.instance.m_OutChepai = label_out_chepai.Text;
+            Manager.Instance.m_OutChepai = label_out_chepai.Text;
         }
         public void UpdateInchepaiImage(string path)
         {
             pictureBox_in_img.Image = Image.FromFile(path);
-            Manager.instance.m_inImgPath = path;//写入数据库的时候需要两次转义
+            Manager.Instance.m_inImgPath = path;//写入数据库的时候需要两次转义
                                                                       // Manager.instance.m_inImgPath = path.Replace("\\","\\\\");//写入数据库的时候需要两次转义
         }
 
         public void UpdateOutchepaiImage(string path)
         {
             pictureBox_out_img.Image = Image.FromFile(path);
-            Manager.instance.m_outImgPath = path;
+            Manager.Instance.m_outImgPath = path;
            // Manager.instance.m_outImgPath = path.Replace("\\", "\\\\");
         }
 
         public void UpdateInweight(string str)
         {
             label_in_weight.Text = str;
-            Manager.instance.m_inWeight = double.Parse(label_in_weight.Text);
+            Manager.Instance.m_inWeight = double.Parse(label_in_weight.Text);
         }
 
         public void UpdateOutweight(string str)
         {
             label_out_weight.Text = str;
-            Manager.instance.m_outWeight = double.Parse( label_out_weight.Text);
+            Manager.Instance.m_outWeight = double.Parse( label_out_weight.Text);
         }
 
         public void UpdateInweightState(string str)
         {
+            if (str.Contains("不稳定"))
+            {
+                label_in_state.ForeColor = Color.Red;
+            }
+            else
+            {
+                label_in_state.ForeColor = Color.Black;
+            }
             label_in_state.Text = str;
         }
         public void UpdateOutweightState(string str)
         {
+            if (str.Contains("不稳定"))
+            {
+                label_out_state.ForeColor = Color.Red;
+            }
+            else
+            {
+                label_out_state.ForeColor = Color.Black;
+            }
             label_out_state.Text = str;
         }
 
@@ -416,7 +468,7 @@ namespace LicensePlate
                         //Manager.instance.m_cheOutList.Add(chepai);
                     }else if (out_time == "")
                     {
-                        Manager.instance.m_cheInList.Add(chepai);
+                        Manager.Instance.m_cheInList.Add(chepai);
                     }
                  
                 }
@@ -425,15 +477,15 @@ namespace LicensePlate
 
         }
 
-        void initBlackList()
+        void initWhiteList()
         {
-            string sql = "select chepai from blacklist";
+            string sql = "select chepai from whitelist";
             MySqlDataReader dr = MysqlHelp.Instance.DoGetReader(sql);
             if (dr!=null)
             {
                 while (dr.Read())
                 {
-                    Manager.instance.m_blackList.Add(dr["chepai"].ToString());
+                    Manager.Instance.m_whiteList.Add(dr["chepai"].ToString());
                 }
                 dr.Close();
             }
@@ -442,9 +494,19 @@ namespace LicensePlate
 
         string GetIDbyInchepai(string in_chepai)
         {
-            for (int i = listView1.Items.Count-1;  i>=0; i--)
+            //for (int i = listView1.Items.Count-1;  i>=0; i--)
+            //{
+            //    if (listView1.Items[i].SubItems[6].Text == in_chepai)
+            //    {
+            //        return listView1.Items[i].SubItems[0].Text;
+            //    }
+            //}
+
+            for (int i = 0; i< listView1.Items.Count ;  i++)
             {
-                if (listView1.Items[i].SubItems[6].Text == in_chepai)
+                string chepai = listView1.Items[i].SubItems[6].Text;
+                string inWeight = listView1.Items[i].SubItems[3].Text;
+                if ( chepai== in_chepai && !string.IsNullOrEmpty(inWeight))
                 {
                     return listView1.Items[i].SubItems[0].Text;
                 }
@@ -740,27 +802,27 @@ namespace LicensePlate
 
         private void 开启入厂红外围栏检测ToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Manager.instance. ignore_in_redSwitch = false;
+            Manager.Instance. ignore_in_redSwitch = false;
         }
 
         private void 忽略入厂红外围栏检测ToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Manager.instance.ignore_in_redSwitch = true;
+            Manager.Instance.ignore_in_redSwitch = true;
         }
 
         private void 开启出厂红外围栏检测ToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Manager.instance.ignore_out_redSwitch = false;
+            Manager.Instance.ignore_out_redSwitch = false;
         }
 
         private void 忽略出厂红外围栏检测ToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Manager.instance.ignore_out_redSwitch = true;
+            Manager.Instance.ignore_out_redSwitch = true;
         }
 
         public void UpdeteRedSwitchUI(int n1, int n2, int n3, int n4, int n5, int n6, int n7, int n8)
         {
-            if (Manager.instance.ignore_in_redSwitch)
+            if (Manager.Instance.ignore_in_redSwitch)
             {
                 pictureBox_in_left.BackColor = Color.LightGray;
                 pictureBox_in_top.BackColor = Color.LightGray;
@@ -805,7 +867,7 @@ namespace LicensePlate
 
             }
 
-            if (Manager.instance.ignore_out_redSwitch)
+            if (Manager.Instance.ignore_out_redSwitch)
             {
                 pictureBox_out_left.BackColor = Color.LightGray;
                 pictureBox_out_top.BackColor = Color.LightGray;
@@ -960,7 +1022,7 @@ namespace LicensePlate
 
         private void 弹窗测试ToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Manager.instance.ShowHideMessage("这是一条提示！", true);
+            Manager.Instance.ShowHideMessage("这是一条提示！", true);
         }
 
         private void 一键启动入厂设备ToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1008,12 +1070,12 @@ namespace LicensePlate
         {
             if (预览ToolStripMenuItem.Text.Contains("√"))
             {
-                Manager.instance.isPreviewPrint = false;
+                Manager.Instance.isPreviewPrint = false;
                 预览ToolStripMenuItem.Text = "预览";
             }
             else
             {
-                Manager.instance.isPreviewPrint = true;
+                Manager.Instance.isPreviewPrint = true;
                 预览ToolStripMenuItem.Text = "预览 √";
             }
            
@@ -1026,7 +1088,7 @@ namespace LicensePlate
             {
                 if (button_AddBlackList.Text.Contains("取消"))
                 {
-                   bool ret =  Manager.instance.RemoveBlackList(selectChepai);
+                   bool ret =  Manager.Instance.RemoveBlackList(selectChepai);
                     if (ret)
                     {
                         button_AddBlackList.Text = "拉黑";
@@ -1039,7 +1101,7 @@ namespace LicensePlate
                 }
                 else
                 {
-                   bool ret = Manager.instance.AddBlackList(selectChepai);
+                   bool ret = Manager.Instance.AddBlackList(selectChepai);
                     if (ret)
                     {
                         button_AddBlackList.Text = "取消拉黑";
@@ -1061,7 +1123,8 @@ namespace LicensePlate
         private void textBox_chepai_TextChanged(object sender, EventArgs e)
         {
             string str = textBox_chepai.Text;
-            str = Manager.instance.m_blackList.Find((data) => data == str.Trim());
+            str = Manager.Instance.m_blackList.Find((data) => data == str.Trim());
+          
             if (!string.IsNullOrEmpty(str))
             {
                 button_AddBlackList.Text = "取消拉黑";
@@ -1074,8 +1137,33 @@ namespace LicensePlate
 
         private void 黑名单ToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            BlackListForm formBlack = new BlackListForm();
-            formBlack.Show();
+            MessageBox.Show("不可用！请操作白名单！");
+            //BlackListForm formBlack = new BlackListForm();
+            //formBlack.Show();
+        }
+
+        private void 登录ToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            LoginForm form = new LoginForm();
+            form.Show();
+        }
+
+        private void 修改ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            UserForm form = new UserForm();
+            form.Show();
+        }
+
+        private void 添加用户ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            AddUserForm form = new AddUserForm();
+            form.Show();
+        }
+
+        private void 白名单ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            WhiteListForm form = new WhiteListForm();
+            form.Show();
         }
     }
 }

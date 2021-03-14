@@ -29,10 +29,15 @@ namespace LicensePlate
         public ShowMessageDelegate ShowHideMessage;
         public Func<string, string> GetIDbyInChepai;
         public Action<string> LogToRichText;
-        public static Manager instance = new Manager();
+        public Action LoginSuccess;
+        private static Manager instance = new Manager();
 
         public List<string> m_blackList = new List<string>();//黑名单
+        public List<string> m_whiteList = new List<string>();//黑名单
+
         public List<string> m_cheInList = new List<string>();//入厂名单
+        public Dictionary<string, DateTime> m_cheInTimeDic = new Dictionary<string, DateTime>();
+
 
        // public
 
@@ -94,7 +99,7 @@ namespace LicensePlate
 
         public string CreateInRecord()
         {
-            if (Manager.instance.m_inWeight < 1000) //称重低于1吨不处理
+            if (Manager.instance.m_inWeight < 1) //称重低于1吨不处理
             {
                 ShowHideMessage("低于1吨，称重异常，请重试！", true);//出厂围栏遮挡的提示隐藏掉
                 m_inChepaiChange = false;// 
@@ -108,14 +113,29 @@ namespace LicensePlate
                 Console.WriteLine("已经存在入厂记录:"+m_inChepai);
                 ShowHideMessage("禁入！已存在入厂记录:" + m_inChepai, true);
                 ledControl.InLEDTextUpdate("请下磅重试", m_inWeight.ToString());
-                return null;
-                //return "已经存在入厂记录";
+                if (m_cheInTimeDic.ContainsKey(str1))
+                {
+                    DateTime inTime = m_cheInTimeDic[str1];
+                    TimeSpan t1 = new TimeSpan(inTime.Ticks);
+                    TimeSpan t2 = new TimeSpan(DateTime.Now.Ticks);
+                    TimeSpan t3 = t2.Subtract(t1);
+                    int sumSeconds = int.Parse(t3.TotalSeconds.ToString()); //得到相差秒数
+                    if (sumSeconds <  15 * 60) //判断是否小于15分钟
+                    {
+                        ShowHideMessage("15分钟内有入厂记录！:" + m_inChepai, true);
+                        return null;
+                    }
+
+
+                }
+              
             }
-            str1 = m_blackList.Find((data)=>data==m_inChepai);
+           // str1 = m_blackList.Find((data)=>data==m_inChepai);
+            str1 = m_whiteList.Find((data) => data == m_inChepai);
             if (!string.IsNullOrEmpty(str1))
             {
-                ShowHideMessage("黑名单成员禁入！:" + m_inChepai, true);
-                ledControl.InLEDTextUpdate("已拉黑", m_inWeight.ToString());
+                ShowHideMessage("非白名单成员禁入！:" + m_inChepai, true);
+                ledControl.InLEDTextUpdate("禁入", m_inWeight.ToString());
                 return null;
             }
 
@@ -135,7 +155,10 @@ namespace LicensePlate
             m_inChepaiChange = false;
             //显示在listview
             m_cheInList.Add(m_inChepai);//加入入厂名单
+            m_cheInTimeDic[m_inChepai] = DateTime.Now;//记录入厂i时间
+
             InsertIndexListView(string.Format("{4},{0},,{1},,,{2},{3},", t, m_inWeight, m_inChepai, m_inImgPath,newId));
+           
             System.Threading.Thread.Sleep(3000);//显示3秒车牌
             ledControl.InLEDTextUpdate("请下磅！", m_inWeight.ToString());
             redSwitch.RiseIn();
@@ -145,7 +168,7 @@ namespace LicensePlate
        public void CreateOutRecord()
         {
 
-            if (Manager.instance.m_outWeight < 1000) //称重低于1吨不处理
+            if (Manager.instance.m_outWeight < 1) //称重低于1吨不处理
             {
                 ShowHideMessage("低于1吨，称重异常，请重试！", true);
                 m_outChepaiChange = false;//提示一次就够了
@@ -204,12 +227,13 @@ namespace LicensePlate
         public bool AddBlackList(string chepai)
         {
             
-            if (userInfo.level<RootLevel.Highest)
+            if (userInfo.level>RootLevel.Normal)
             {
                 ShowHideMessage("用户权限不够", true);
                 return false;
             }
 
+            RemoveWhiteList(chepai);
             string sqlStr = $"insert into blacklist (chepai,add_time,do_user) values ('{chepai.Trim()}','{System.DateTime.Now}','{userInfo.username}')";
             int ret = MysqlHelp.Instance.DoInsert(sqlStr);
             if (ret<0)
@@ -226,6 +250,7 @@ namespace LicensePlate
 
         public bool RemoveBlackList(string chepai)
         {
+            AddWhiteList(chepai);
             string sql = $"delete from blacklist where chepai='{chepai}'";
             int ret = MysqlHelp.Instance.Do(sql);
             if (ret == 1)
@@ -237,6 +262,36 @@ namespace LicensePlate
             {
                 // ShowHideMessage($"{chepai}移除黑名单失败", true);
                 return false;
+            }
+        }
+
+        private void AddWhiteList(string chepai)
+        {
+            string sqlStr = $"insert into whitelist (chepai,add_time,do_user) values ('{chepai.Trim()}','{System.DateTime.Now}','{userInfo.username}')";
+            int ret = MysqlHelp.Instance.DoInsert(sqlStr);
+            if (ret < 0)
+            {
+                // ShowHideMessage($"{chepai}加入黑名单失败", true);
+                return ;
+            }
+            else
+            {
+                m_whiteList.Add(chepai);
+            }
+        }
+        private void RemoveWhiteList(string chepai)
+        {
+            string sql = $"delete from whitelist where chepai='{chepai}'";
+            int ret = MysqlHelp.Instance.Do(sql);
+            if (ret == 1)
+            {
+                m_whiteList.Remove(chepai);
+                return ;
+            }
+            else
+            {
+                // ShowHideMessage($"{chepai}移除黑名单失败", true);
+                return ;
             }
         }
     }

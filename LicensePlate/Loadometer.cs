@@ -65,7 +65,7 @@ namespace LicensePlate
         {
             if (isOpenIn)
             {
-                Manager.instance.LogToRichText("入厂地磅不可以重复打开！");
+                Manager.Instance.LogToRichText("入厂地磅不可以重复打开！");
                 return;
             }
             string str_com = IniFiles.iniFile.IniReadValue("weight", "port1");
@@ -82,7 +82,7 @@ namespace LicensePlate
             {
                 Log.myLog.Warn("没有发现串口：" + str_com + " open failed!");
                 MessageBox.Show("没有发现串口：" + str_com + " 入厂地磅 open failed!");
-                Manager.instance.LogToRichText("入厂地磅打开失败");
+                Manager.Instance.LogToRichText("入厂地磅打开失败");
                 return;
             }
             m_serialPort_in.PortName = str_com; //"COM6";
@@ -108,7 +108,7 @@ namespace LicensePlate
                 Log.myLog.Info("串口打开成功:" + str_com);
                 UpdateInweightConnect("通讯：OK");
                 //label_in_connect.Text = "通讯：OK";
-                Manager.instance.LogToRichText("入厂地磅打开成功");
+                Manager.Instance.LogToRichText("入厂地磅打开成功");
                 Thread.Sleep(500);
                 //开起定时器，检测是否生成记录
                 System.Timers.Timer tt = new System.Timers.Timer(2000);
@@ -121,7 +121,7 @@ namespace LicensePlate
             }
             catch (Exception e)
             {
-                Manager.instance.LogToRichText("入厂地磅打开失败，" + e.Message);
+                Manager.Instance.LogToRichText("入厂地磅打开失败，" + e.Message);
                 ;
             }
            
@@ -133,16 +133,16 @@ namespace LicensePlate
 
             if (inState_ST)
             {
-                if (Manager.instance.m_inChepaiChange)//识别了新车牌
+                if (Manager.Instance.m_inChepaiChange)//识别了新车牌
                 {
                    
-                    if (Manager.instance.m_inRedSwitchOK || Manager.instance.ignore_in_redSwitch)
+                    if (Manager.Instance.m_inRedSwitchOK || Manager.Instance.ignore_in_redSwitch)
                     {
-                        Manager.instance.CreateInRecord();
+                        Manager.Instance.CreateInRecord();
                     }
                     else
                     {
-                        Manager.instance.ShowHideMessage("入厂围栏有遮挡！", true);
+                        Manager.Instance.ShowHideMessage("入厂围栏有遮挡！", true);
                        // MessageBox.Show("入厂围栏有遮挡！");
                     }
 
@@ -216,7 +216,7 @@ namespace LicensePlate
                     UpdateInweight(temp_weight);
                     try
                     {
-                        Manager.instance.m_inWeight = double.Parse(temp_weight);
+                        Manager.Instance.m_inWeight = double.Parse(temp_weight);
                     }
                     catch (Exception e1)
                     {
@@ -254,7 +254,7 @@ namespace LicensePlate
         {
             if (isOpenOut)
             {
-                Manager.instance.LogToRichText("出厂地磅不可以重复打开！");
+                Manager.Instance.LogToRichText("出厂地磅不可以重复打开！");
                 return;
             }
             string str_com = IniFiles.iniFile.IniReadValue("weight", "port2");
@@ -296,7 +296,7 @@ namespace LicensePlate
                 Log.myLog.Info("串口打开成功:" + str_com);
                 //label_out_connect.Text = "通讯：OK";
                 UpdateOutweightConnect("通讯：OK");
-                Manager.instance.LogToRichText("出厂地磅打开成功");
+                Manager.Instance.LogToRichText("出厂地磅打开成功");
                 Thread.Sleep(500);
                 //开起定时器，检测是否生成记录
                 System.Timers.Timer tt = new System.Timers.Timer(2000);
@@ -310,7 +310,7 @@ namespace LicensePlate
             }
             catch (Exception e)
             {
-                Manager.instance.LogToRichText("出厂地磅打开失败，"+e.Message);
+                Manager.Instance.LogToRichText("出厂地磅打开失败，"+e.Message);
                 
             }
            
@@ -375,7 +375,7 @@ namespace LicensePlate
                     UpdateOutweight(temp_weight);
                     try
                     {
-                        Manager.instance.m_outWeight = double.Parse(temp_weight);
+                        Manager.Instance.m_outWeight = double.Parse(temp_weight);
                        
                     }
                     catch (Exception e1)
@@ -415,18 +415,18 @@ namespace LicensePlate
 
             if (outState_ST)
             {
-                if (Manager.instance.m_outChepaiChange)//识别了新车牌
+                if (Manager.Instance.m_outChepaiChange)//识别了新车牌
                 {
                    
 
-                    if (Manager.instance.m_outRedSwitchOK || Manager.instance.ignore_out_redSwitch)
+                    if (Manager.Instance.m_outRedSwitchOK || Manager.Instance.ignore_out_redSwitch)
                     {
-                        Manager.instance.CreateOutRecord();
+                        Manager.Instance.CreateOutRecord();
                     }
                     else
                     {
                         
-                        Manager.instance.ShowHideMessage("出厂围栏有遮挡！", true);
+                        Manager.Instance.ShowHideMessage("出厂围栏有遮挡！", true);
                         // MessageBox.Show("出厂围栏有遮挡！");
                     }
 

@@ -71,9 +71,9 @@ namespace LicensePlate
             listView1.Columns.Add(c9);
 
 
-            insertToListView1("1,2020-03-12 07:05:43,,+11,,,che1,,,,,");
-            insertToListView1("2,234,234,,345,234,che2,,,,,,,");
-            insertToListView1("3,,2020-03-12 08:05:43,,+345,,che3,,,,,,");
+            //insertToListView1("1,2020-03-12 07:05:43,,+11,,,che1,,,,,");
+            //insertToListView1("2,234,234,,345,234,che2,,,,,,,");
+            //insertToListView1("3,,2020-03-12 08:05:43,,+345,,che3,,,,,,");
         }
 
         private void insertToListView1(string str)
@@ -139,7 +139,8 @@ namespace LicensePlate
             yvalues = this.Height;
             SetTag(this);
 
-            richTextBox_report.Text = " 开始时间：xxxx\r\n  截止时间：xxxx\r\n 不限车牌号\r\n 一共处理污水nkg，运输n次，平均每次处理污水nkg，违规n次。";
+          //  richTextBox_report.Text = " 开始时间：xxxx\r\n  截止时间：xxxx\r\n 不限车牌号\r\n 一共处理污水nkg，运输n次，平均每次处理污水nkg，违规n次。";
+          //  groupBox2.Hide();//TODO
         }
         private void MainForm_Resize(object sender, EventArgs e)//重绘事件
         {
@@ -195,13 +196,23 @@ namespace LicensePlate
 
             string commdStr="select * from chepai limit 100 where state=1";
 
+            //if (useCepai)
+            //{
+            //    commdStr = string.Format("select * from chepai where state=1 and in_chepai='{0}' and in_time>'{1}' and in_time<'{2}' order by in_time desc limit 100", cpai, t1, t2);
+            //}
+            //else
+            //{
+            //    commdStr = string.Format("select * from chepai where state=1 and in_time>'{1}' and in_time<'{2}' order by in_time desc limit 100", cpai, t1, t2);
+
+            //}
+
             if (useCepai)
             {
-                commdStr = string.Format("select * from chepai where state=1 and in_chepai='{0}' and in_time>'{1}' and in_time<'{2}' order by in_time desc limit 100", cpai, t1, t2);
+                commdStr = string.Format("select * from chepai where in_chepai='{0}' and in_time>'{1}' and in_time<'{2}' order by in_time desc limit 100", cpai, t1, t2);
             }
             else
             {
-                commdStr = string.Format("select * from chepai where state=1 and in_time>'{1}' and in_time<'{2}' order by in_time desc limit 100", cpai, t1, t2);
+                commdStr = string.Format("select * from chepai where in_time>'{1}' and in_time<'{2}' order by in_time desc limit 100", cpai, t1, t2);
 
             }
 

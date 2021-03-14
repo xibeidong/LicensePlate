@@ -78,6 +78,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AddUserForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AddUserForm.Designer.cs">
+      <DependentUpon>AddUserForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="BlackListForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -102,6 +108,12 @@
     <Compile Include="LEDControl.cs" />
     <Compile Include="LedDll.cs" />
     <Compile Include="Loadometer.cs" />
+    <Compile Include="LoginForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="LoginForm.Designer.cs">
+      <DependentUpon>LoginForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Log\Logger.cs" />
     <Compile Include="Manager.cs" />
     <Compile Include="MessageShowForm.cs">
@@ -121,7 +133,22 @@
       <DependentUpon>RecordForm.cs</DependentUpon>
     </Compile>
     <Compile Include="RedSwitch.cs" />
+    <Compile Include="UserForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UserForm.Designer.cs">
+      <DependentUpon>UserForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="VzClientSDK.cs" />
+    <Compile Include="WhiteListForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="WhiteListForm.Designer.cs">
+      <DependentUpon>WhiteListForm.cs</DependentUpon>
+    </Compile>
+    <EmbeddedResource Include="AddUserForm.resx">
+      <DependentUpon>AddUserForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="BlackListForm.resx">
       <DependentUpon>BlackListForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -130,6 +157,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="FormShowImg.resx">
       <DependentUpon>FormShowImg.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="LoginForm.resx">
+      <DependentUpon>LoginForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="MessageShowForm.resx">
       <DependentUpon>MessageShowForm.cs</DependentUpon>
@@ -146,6 +176,12 @@
     </Compile>
     <EmbeddedResource Include="RecordForm.resx">
       <DependentUpon>RecordForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UserForm.resx">
+      <DependentUpon>UserForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="WhiteListForm.resx">
+      <DependentUpon>WhiteListForm.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="app.config" />
     <None Include="NLog.config">
